@@ -7,6 +7,7 @@ import (
 
 	"github.com/Linkinlog/gasible/pkg/installer"
 	"github.com/Linkinlog/gasible/pkg/osHandler"
+	yamlparser "github.com/Linkinlog/gasible/pkg/yamlParser"
 )
 
 // ProcessCommand will start everything,
@@ -16,5 +17,9 @@ func ProcessCommand() error {
 	if err != nil {
 		return err
 	}
+	if len(os.Args) > 1 && os.Args[1] == "generate" {
+		return yamlparser.CreateDefaults()
+	} else {
 		return installer.Installer(system)
+	}
 }
