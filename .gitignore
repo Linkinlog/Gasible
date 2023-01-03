@@ -4,6 +4,10 @@
 *.dll
 *.so
 *.dylib
+gasible
+
+# Our default YAML file
+default.yml
 
 # Test binary, built with `go test -c`
 *.test
