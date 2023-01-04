@@ -12,6 +12,7 @@ type PackageInstallerConfig struct {
 }
 
 type ServicesConfig struct {
+	Installer  bool `yaml:"installer,omitempty"`
 	Teamviewer bool `yaml:"teamviewer,omitempty"`
 	Ssh        bool `yaml:"ssh,omitempty"`
 }
@@ -34,6 +35,20 @@ type Config struct {
 	GeneralConfig          `yaml:",inline"`
 }
 
+func ParseGas() (Config, error) {
+	conf := Config{}
+	file, err := os.ReadFile("gas.yml")
+	if err != nil {
+		return Config{}, err
+	}
+
+	err = yaml.Unmarshal(file, &conf)
+	if err != nil {
+		return Config{}, err
+	}
+	return conf, nil
+}
+
 func CreateDefaults() error {
 	pkgInstallConf := PackageInstallerConfig{
 		Manager: "dnf",
@@ -48,6 +63,7 @@ func CreateDefaults() error {
 		},
 	}
 	Services := ServicesConfig{
+        Installer:  true,
 		Teamviewer: true,
 		Ssh:        true,
 	}

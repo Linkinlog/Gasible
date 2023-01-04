@@ -6,8 +6,8 @@
 *.dylib
 gasible
 
-# Our default YAML file
-default.yml
+# Our all YAML config files
+*.yml
 
 # Test binary, built with `go test -c`
 *.test
