@@ -15,6 +15,7 @@ type ServicesConfig struct {
 	Installer  bool `yaml:"installer,omitempty"`
 	Teamviewer bool `yaml:"teamviewer,omitempty"`
 	Ssh        bool `yaml:"ssh,omitempty"`
+	Git        bool `yaml:"git,omitempty"`
 }
 
 type GeneralConfig struct {
@@ -66,6 +67,7 @@ func CreateDefaults() error {
         Installer:  true,
 		Teamviewer: true,
 		Ssh:        true,
+		Git:        true,
 	}
 	General := GeneralConfig{
 		Hostname: "development-station",
