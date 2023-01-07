@@ -7,6 +7,8 @@ package osHandler
 
 import (
 	"errors"
+
+	"github.com/Linkinlog/gasible/internal/yamlParser"
 )
 
 // config contains the name of the configuration and

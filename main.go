@@ -12,7 +12,7 @@ package main
 import (
 	"fmt"
 
-	commandprocessor "github.com/Linkinlog/gasible/pkg/commandProcessor"
+	commandprocessor "github.com/Linkinlog/gasible/internal/commandProcessor"
 )
 
 // main starts everything off, starting with our command processor.

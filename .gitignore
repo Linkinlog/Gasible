@@ -6,6 +6,8 @@
 *.dylib
 gasible
 
+TODO.md
+
 # Our all YAML config files
 *.yml
 

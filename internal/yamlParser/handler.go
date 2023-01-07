@@ -1,4 +1,4 @@
-package yamlparser
+package yamlParser
 
 import (
 	"os"
@@ -36,9 +36,36 @@ type Config struct {
 	GeneralConfig          `yaml:",inline"`
 }
 
-func ParseGas() (Config, error) {
+type IConfig interface {
+    generate() error
+    parse() error
+}
+
+type IPackageInstallerConfig interface {
+    installPkgs() error
+}
+
+type IGeneralConfig interface {
+    setHostName() error
+    setIP() error
+    setupTeamViewer() error
+    setupAll() error
+}
+
+// ParseGas will read a YAML file and return it in
+// its corresponding struct format.
+// It takes a filePath string the path and filename of the YAML file.
+// It returns Config{} which is the resulting config struct.
+// TODO make this work as an interface, so we can pass in 
+// all of the structs above to generate their relative YAML
+// and also so we can parse said YAML
+//FIX Trust me this is how we should do it im a doctor
+func ((filePath string) (Config, error) {
+    if filePath == "" {
+        filePath = "gas.yml"
+    }
 	conf := Config{}
-	file, err := os.ReadFile("gas.yml")
+	file, err := os.ReadFile(filePath)
 	if err != nil {
 		return Config{}, err
 	}
@@ -50,6 +77,8 @@ func ParseGas() (Config, error) {
 	return conf, nil
 }
 
+// CreateDefaults will generate a YAML file
+// using the defaults we outline.
 func CreateDefaults() error {
 	pkgInstallConf := PackageInstallerConfig{
 		Manager: "dnf",

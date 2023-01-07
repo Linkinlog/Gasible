@@ -7,14 +7,14 @@ import (
 
 	"github.com/Linkinlog/gasible/pkg/osHandler"
 	"github.com/Linkinlog/gasible/pkg/installer"
-	yamlparser "github.com/Linkinlog/gasible/pkg/yamlParser"
+    "github.com/Linkinlog/gasible/pkg/yamlParser"
 )
 
 // ProcessCommand will start everything,
 // handling the flags/args and processing.
 func ProcessCommand() error {
 	if len(os.Args) > 1 && os.Args[1] == "generate" {
-		return yamlparser.CreateDefaults()
+		return yamlParser.CreateDefaults()
 	}
 	return initProcess()
 }
@@ -24,7 +24,7 @@ func initProcess() error {
 	if err != nil {
 		return err
 	}
-	conf, err := yamlparser.ParseGas()
+	conf, err := yamlParser.ParseGas("gas.yml")
 	if err != nil {
 		return err
 	}
