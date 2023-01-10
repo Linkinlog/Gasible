@@ -4,6 +4,12 @@
 *.dll
 *.so
 *.dylib
+gasible
+
+TODO.md
+
+# Our all YAML config files
+*.yml
 
 # Test binary, built with `go test -c`
 *.test

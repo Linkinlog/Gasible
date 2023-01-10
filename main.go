@@ -12,10 +12,13 @@ package main
 import (
 	"fmt"
 
-	commandprocessor "github.com/Linkinlog/gasible/pkg/commandProcessor"
+	commandprocessor "github.com/Linkinlog/gasible/internal/commandProcessor"
 )
 
 // main starts everything off, starting with our command processor.
 func main() {
-	fmt.Println(commandprocessor.ProcessCommand())
+	output := commandprocessor.ProcessCommand()
+	if output != nil {
+		fmt.Println(output)
+	}
 }
