@@ -31,50 +31,14 @@ type TVCreds struct {
 }
 
 type Config struct {
-	PackageInstallerConfig `yaml:",inline"`
-	ServicesConfig         `yaml:",inline"`
-	GeneralConfig          `yaml:",inline"`
+	PackageInstallerConfig `yaml:",inline,omitempty"`
+	ServicesConfig         `yaml:",inline,omitempty"`
+	GeneralConfig          `yaml:",inline,omitempty"`
 }
 
 type IConfig interface {
-    generate() error
-    parse() error
-}
-
-type IPackageInstallerConfig interface {
-    installPkgs() error
-}
-
-type IGeneralConfig interface {
-    setHostName() error
-    setIP() error
-    setupTeamViewer() error
-    setupAll() error
-}
-
-// ParseGas will read a YAML file and return it in
-// its corresponding struct format.
-// It takes a filePath string the path and filename of the YAML file.
-// It returns Config{} which is the resulting config struct.
-// TODO make this work as an interface, so we can pass in 
-// all of the structs above to generate their relative YAML
-// and also so we can parse said YAML
-//FIX Trust me this is how we should do it im a doctor
-func ((filePath string) (Config, error) {
-    if filePath == "" {
-        filePath = "gas.yml"
-    }
-	conf := Config{}
-	file, err := os.ReadFile(filePath)
-	if err != nil {
-		return Config{}, err
-	}
-
-	err = yaml.Unmarshal(file, &conf)
-	if err != nil {
-		return Config{}, err
-	}
-	return conf, nil
+    Parse() error
+    Defaults() error
 }
 
 // CreateDefaults will generate a YAML file

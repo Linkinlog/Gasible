@@ -26,6 +26,16 @@ type System struct {
 	configs    []config
 }
 
+// Interface for the System struct.
+// Provides various functions to setup various OS's.
+type ISystem interface {
+	InstallPackages(yamlParser.Config) error
+	setHostName(yamlParser.Config) error
+	setIP(yamlParser.Config) error
+	setupTeamViewer(yamlParser.Config) error
+	setupAll(yamlParser.Config) error
+}
+
 // stringToSystem will take a system as a string value
 // and return it in a struct format as long as it is supported.
 // It will return an error if it is not supported.
