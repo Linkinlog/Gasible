@@ -5,6 +5,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/Linkinlog/gasible/cmd/installer"
 	"github.com/Linkinlog/gasible/cmd/osHandler"
 	"github.com/Linkinlog/gasible/cmd/yamlParser"
 	"github.com/Linkinlog/gasible/internal/models"
@@ -20,18 +21,16 @@ func ProcessCommand() error {
 }
 
 func initProcess() error {
-    // Grab system running this software
+	// Grab system running this software
 	system, err := osHandler.StringToSystem(runtime.GOOS)
 	if err != nil {
 		return err
 	}
-    // Create a config struct for us to fill
-    conf := yamlParser.Config{}
-    conf, err = conf.Parse()
-	if err != nil { // Handle errors filling (?) maybe
-		return err
-	}
-    // 
+	// Create a config struct for us to fill
+	conf := models.Config{}
+	// Fill the config using the default filepath
+	conf.Fill("")
+
 	if conf.ServicesConfig.Installer {
 		// TODO Make go routine maybe
 		installer.Installer(system, conf.PackageInstallerConfig)

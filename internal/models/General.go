@@ -1,5 +1,11 @@
 package models
 
+import (
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
+
 type TVCreds struct {
 	User string `yaml:"user,omitempty"`
 	Pass string `yaml:"pass,omitempty"`
@@ -21,5 +27,20 @@ func (General GeneralConfig) Default() *GeneralConfig {
 			User: "username",
 			Pass: "password",
 		},
+	}
+}
+
+func (conf *GeneralConfig) Fill(filePath string) {
+	if filePath == "" {
+		filePath = "gas.yml"
+	}
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+		panic(err)
+	}
+
+	err = yaml.Unmarshal(file, &conf)
+	if err != nil {
+		panic(err)
 	}
 }

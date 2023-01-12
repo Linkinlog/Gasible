@@ -8,7 +8,6 @@ package osHandler
 import (
 	"errors"
 
-	"github.com/Linkinlog/gasible/internal/yamlParser"
 )
 
 // config contains the name of the configuration and
@@ -24,16 +23,6 @@ type System struct {
 	name       string
 	pkgManager string
 	configs    []config
-}
-
-// Interface for the System struct.
-// Provides various functions to setup various OS's.
-type ISystem interface {
-	InstallPackages(yamlParser.Config) error
-	setHostName(yamlParser.Config) error
-	setIP(yamlParser.Config) error
-	setupTeamViewer(yamlParser.Config) error
-	setupAll(yamlParser.Config) error
 }
 
 // stringToSystem will take a system as a string value

@@ -1,17 +1,15 @@
 package models
 
+import (
+	"os"
+
+	"gopkg.in/yaml.v3"
+)
+
 type Config struct {
 	PackageInstallerConfig `yaml:",inline,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
-}
-
-// This interface represents new instances of this config,
-// as well as the other models we have to represent the sections
-// within the YAML config file.
-type IConfigs interface {
-    Default()
-    New()
 }
 
 func (Conf Config) Default() *Config {
@@ -23,5 +21,20 @@ func (Conf Config) Default() *Config {
 		*pkgInstallConf,
 		*servicesConf,
 		*generalConf,
+	}
+}
+
+func (conf *Config) Fill(filePath string) {
+	if filePath == "" {
+		filePath = "gas.yml"
+	}
+	file, err := os.ReadFile(filePath)
+	if err != nil {
+        panic(err)
+	}
+
+	err = yaml.Unmarshal(file, &conf)
+	if err != nil {
+        panic(err)
 	}
 }
