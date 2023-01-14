@@ -24,17 +24,18 @@ func (Conf Config) Default() *Config {
 	}
 }
 
-func (conf *Config) Fill(filePath string) {
+func (conf Config) FillFromFile(filePath string) *Config {
 	if filePath == "" {
 		filePath = "gas.yml"
 	}
 	file, err := os.ReadFile(filePath)
 	if err != nil {
-        panic(err)
+		panic(err)
 	}
 
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-        panic(err)
+		panic(err)
 	}
+	return &conf
 }

@@ -13,7 +13,7 @@ type ServicesConfig struct {
 	Git        bool `yaml:"git,omitempty"`
 }
 
-func (Services ServicesConfig) Default() *ServicesConfig {
+func (ServicesConfig) Default() *ServicesConfig {
 	return &ServicesConfig{
 		Installer:  true,
 		Teamviewer: true,
@@ -22,7 +22,7 @@ func (Services ServicesConfig) Default() *ServicesConfig {
 	}
 }
 
-func (conf *ServicesConfig) Fill(filePath string) {
+func (conf ServicesConfig) FillFromFile(filePath string) *ServicesConfig {
 	if filePath == "" {
 		filePath = "gas.yml"
 	}
@@ -35,4 +35,5 @@ func (conf *ServicesConfig) Fill(filePath string) {
 	if err != nil {
         panic(err)
 	}
+    return &conf
 }

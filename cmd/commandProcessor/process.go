@@ -3,10 +3,8 @@ package commandProcessor
 
 import (
 	"os"
-	"runtime"
 
 	"github.com/Linkinlog/gasible/cmd/installer"
-	"github.com/Linkinlog/gasible/cmd/osHandler"
 	"github.com/Linkinlog/gasible/cmd/yamlParser"
 	"github.com/Linkinlog/gasible/internal/models"
 )
@@ -21,19 +19,12 @@ func ProcessCommand() error {
 }
 
 func initProcess() error {
-	// Grab system running this software
-	system, err := osHandler.StringToSystem(runtime.GOOS)
-	if err != nil {
-		return err
-	}
-	// Create a config struct for us to fill
-	conf := models.Config{}
-	// Fill the config using the default filepath
-	conf.Fill("")
+	// Create a config struct and fill it from the config file
+	conf := models.Config{}.FillFromFile("")
 
 	if conf.ServicesConfig.Installer {
 		// TODO Make go routine maybe
-		installer.Installer(system, conf.PackageInstallerConfig)
+		installer.Installer(conf)
 	}
 	if conf.ServicesConfig.Ssh {
 		// TODO
@@ -41,5 +32,5 @@ func initProcess() error {
 	if conf.ServicesConfig.Teamviewer {
 		// TODO
 	}
-	return err
+	return nil
 }

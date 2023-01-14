@@ -7,32 +7,41 @@ package osHandler
 
 import (
 	"errors"
-
+	"runtime"
 )
 
 // config contains the name of the configuration and
 // the path we should put the config files / clone the repo to.
 type config struct {
-	name string
-	path string
+	Name string
+	Path string
 }
 
 // os contains the name of the operating system and
 // the configs we want to configure for said OS.
 type System struct {
-	name       string
-	pkgManager string
-	configs    []config
+	Name    string
+	Configs []config
+}
+
+// GetCurrentSystem returns the system struct
+// relative to the current system at runtime.
+func GetCurrentSystem() *System {
+	// Grab system running this software
+	system, err := StringToSystem(runtime.GOOS)
+	if err != nil {
+		panic(err)
+	}
+	return &system
 }
 
 // stringToSystem will take a system as a string value
 // and return it in a struct format as long as it is supported.
 // It will return an error if it is not supported.
 func StringToSystem(s string) (System, error) {
-	switch s {
-	case "win", "linux", "mac":
-		return supportedSystemsMap[s], nil
-	default:
+	if system, exists := supportedSystemsMap[s]; exists {
+		return system, nil
+	} else {
 		return System{}, errors.New("Unsupported system")
 	}
 }
@@ -40,15 +49,14 @@ func StringToSystem(s string) (System, error) {
 // supportedSystemsMap is a map so we can access
 // a System struct by its string value.
 var supportedSystemsMap = map[string]System{
-	"win":   windowsSystem,
-	"linux": linuxSystem,
-	"mac":   macSystem,
+	"windows": windowsSystem,
+	"linux":   linuxSystem,
+	"darwin":  macSystem,
 }
 
 // Default values for a windows OS.
 var windowsSystem = System{
-	"win",
-	"winget",
+	"windows",
 	[]config{
 		{
 			"neovim",
@@ -68,7 +76,6 @@ var windowsSystem = System{
 // Default values for a linux OS.
 var linuxSystem = System{
 	"linux",
-	"dnf",
 	[]config{
 		{
 			"neovim",
@@ -88,7 +95,6 @@ var linuxSystem = System{
 // Default values for a mac OS.
 var macSystem = System{
 	"mac",
-	"brew",
 	[]config{
 		{
 			"neovim",
