@@ -6,11 +6,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// The credentials to the teamviewer account.
+// TODO Find a better way to handle this
 type TVCreds struct {
 	User string `yaml:"user,omitempty"`
 	Pass string `yaml:"pass,omitempty"`
 }
 
+// General configs relating to system setup.
 type GeneralConfig struct {
 	Hostname        string  `yaml:"hostname,omitempty"`
 	IP              string  `yaml:"staticIP,omitempty"`
@@ -18,7 +21,8 @@ type GeneralConfig struct {
 	TeamViewerCreds TVCreds `yaml:"TeamViewerCreds,omitempty"`
 }
 
-func (General GeneralConfig) Default() *GeneralConfig {
+// Create the defaults and write them to *GeneralConfig.
+func (GeneralConfig) Default() *GeneralConfig {
 	return &GeneralConfig{
 		Hostname: "development-station",
 		IP:       "192.168.4.20",
@@ -30,7 +34,8 @@ func (General GeneralConfig) Default() *GeneralConfig {
 	}
 }
 
-func (conf *GeneralConfig) Fill(filePath string) {
+// Grab the config from the YAML and write them to *GeneralConfig.
+func (conf GeneralConfig) FillFromFile(filePath string) *GeneralConfig {
 	if filePath == "" {
 		filePath = "gas.yml"
 	}
@@ -43,4 +48,5 @@ func (conf *GeneralConfig) Fill(filePath string) {
 	if err != nil {
 		panic(err)
 	}
+	return &conf
 }
