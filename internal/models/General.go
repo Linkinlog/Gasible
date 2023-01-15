@@ -13,6 +13,7 @@ type TVCreds struct {
 	Pass string `yaml:"pass,omitempty"`
 }
 
+// General configs relating to system setup.
 type GeneralConfig struct {
 	Hostname        string  `yaml:"hostname,omitempty"`
 	IP              string  `yaml:"staticIP,omitempty"`
@@ -20,6 +21,7 @@ type GeneralConfig struct {
 	TeamViewerCreds TVCreds `yaml:"TeamViewerCreds,omitempty"`
 }
 
+// Create the defaults and write them to *GeneralConfig.
 func (GeneralConfig) Default() *GeneralConfig {
 	return &GeneralConfig{
 		Hostname: "development-station",
@@ -32,6 +34,7 @@ func (GeneralConfig) Default() *GeneralConfig {
 	}
 }
 
+// Grab the config from the YAML and write them to *GeneralConfig.
 func (conf GeneralConfig) FillFromFile(filePath string) *GeneralConfig {
 	if filePath == "" {
 		filePath = "gas.yml"
@@ -45,5 +48,5 @@ func (conf GeneralConfig) FillFromFile(filePath string) *GeneralConfig {
 	if err != nil {
 		panic(err)
 	}
-    return &conf
+	return &conf
 }

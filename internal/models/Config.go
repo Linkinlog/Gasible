@@ -6,12 +6,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// The entire config YAML.
 type Config struct {
 	PackageInstallerConfig `yaml:",inline,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
 }
 
+// Create the defaults and write them to *Config.
 func (Conf Config) Default() *Config {
 	pkgInstallConf := PackageInstallerConfig{}.Default()
 	servicesConf := ServicesConfig{}.Default()
@@ -24,6 +26,7 @@ func (Conf Config) Default() *Config {
 	}
 }
 
+// Grab the config from the YAML and write it to *Config.
 func (conf Config) FillFromFile(filePath string) *Config {
 	if filePath == "" {
 		filePath = "gas.yml"
