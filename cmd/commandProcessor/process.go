@@ -27,9 +27,8 @@ func initProcess() error {
 	var wg sync.WaitGroup
 
 	if conf.ServicesConfig.Installer {
-		// TODO Make go routine maybe
 		wg.Add(1)
-		go installer.Installer(conf, &wg)
+		go installer.Installer(&conf.PackageInstallerConfig, &wg)
 	}
 	if conf.ServicesConfig.Ssh {
 		// TODO
