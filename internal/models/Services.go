@@ -24,19 +24,3 @@ func (ServicesConfig) Default() *ServicesConfig {
 	}
 }
 
-// Grabs config from YAML and fills the struct with it.
-func (conf ServicesConfig) FillFromFile(filePath string) *ServicesConfig {
-	if filePath == "" {
-		filePath = "gas.yml"
-	}
-	file, err := os.ReadFile(filePath)
-	if err != nil {
-		panic(err)
-	}
-
-	err = yaml.Unmarshal(file, &conf)
-	if err != nil {
-		panic(err)
-	}
-	return &conf
-}

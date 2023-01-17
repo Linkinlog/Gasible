@@ -22,7 +22,8 @@ func ProcessCommand() error {
 // Start the machine, handle which services to set up.
 func initProcess() error {
 	// Create a config struct and fill it from the config file.
-	conf := models.Config{}.FillFromFile("")
+    conf := models.Config{}
+    conf.FillFromFile()
 	// Create a waitgroup so we can run all services at once.
 	var wg sync.WaitGroup
 

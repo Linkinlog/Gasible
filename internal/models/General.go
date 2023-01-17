@@ -34,19 +34,3 @@ func (GeneralConfig) Default() *GeneralConfig {
 	}
 }
 
-// Grab the config from the YAML and write them to *GeneralConfig.
-func (conf GeneralConfig) FillFromFile(filePath string) *GeneralConfig {
-	if filePath == "" {
-		filePath = "gas.yml"
-	}
-	file, err := os.ReadFile(filePath)
-	if err != nil {
-		panic(err)
-	}
-
-	err = yaml.Unmarshal(file, &conf)
-	if err != nil {
-		panic(err)
-	}
-	return &conf
-}

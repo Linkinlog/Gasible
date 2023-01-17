@@ -8,6 +8,7 @@ import (
 
 // The entire config YAML.
 type Config struct {
+	FilePath               string
 	PackageInstallerConfig `yaml:",inline,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
@@ -20,25 +21,23 @@ func (Conf Config) Default() *Config {
 	generalConf := GeneralConfig{}.Default()
 
 	return &Config{
+		"gas.yml",
 		*pkgInstallConf,
 		*servicesConf,
 		*generalConf,
 	}
 }
 
-// Grab the config from the YAML and write it to *Config.
-func (conf Config) FillFromFile(filePath string) *Config {
-	if filePath == "" {
-		filePath = "gas.yml"
-	}
-	file, err := os.ReadFile(filePath)
+// Grab the config from the YAML and write it to the given struct.
+func (conf *Config)FillFromFile() {
+    conf.FilePath = "gas.yml"
+	file, err := os.ReadFile(conf.FilePath)
 	if err != nil {
 		panic(err)
 	}
-
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
 		panic(err)
 	}
-	return &conf
 }
+

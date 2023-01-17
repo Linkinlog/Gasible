@@ -63,19 +63,3 @@ func (PackageInstallerConfig) Default() *PackageInstallerConfig {
 	}
 }
 
-// Populate the struct with the config file section of the package installer.
-func (conf PackageInstallerConfig) FillFromFile(filePath string) *PackageInstallerConfig {
-	if filePath == "" {
-		filePath = "gas.yml"
-	}
-	file, err := os.ReadFile(filePath)
-	if err != nil {
-		panic(err)
-	}
-
-	err = yaml.Unmarshal(file, &conf)
-	if err != nil {
-		panic(err)
-	}
-	return &conf
-}
