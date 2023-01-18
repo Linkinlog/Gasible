@@ -13,7 +13,7 @@ import (
 
 // Install the packages listed in the
 // packages section of the YAML file.
-func Installer(c *models.PackageInstallerConfig, w *sync.WaitGroup) error {
+func Installer(c *models.PackageInstallerConfig, g *models.GlobalOpts, w *sync.WaitGroup) {
 	defer w.Done()
 	// Verify the OS is supported.
 	system := osHandler.GetCurrentSystem()
@@ -22,13 +22,17 @@ func Installer(c *models.PackageInstallerConfig, w *sync.WaitGroup) error {
 	// Turn our slice of packages into a single string.
 	packages := strings.Join(c.Packages, " ")
 	// Format all of the above into a string.
-	command := strings.Join([]string{"echo", pm, c.Args, packages}, " ")
+	command := strings.Join([]string{pm, c.Args, packages}, " ")
+	// If we are running in NoOp mode, only echo the command
+	if g.NoOp {
+		command = "echo Would have ran: " + command
+	}
 
 	// Mac / Linux have the same path for env
 	if system.Name == "linux" || system.Name == "mac" {
 		fmt.Println("Opening installLog.txt for logging..")
 		// Open our log file for writing
-		f, err := os.OpenFile("installLog.txt", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		f, err := os.OpenFile("installLog.txt", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			m := fmt.Sprint("Error opening file:", err)
 			panic(m)
@@ -51,8 +55,7 @@ func Installer(c *models.PackageInstallerConfig, w *sync.WaitGroup) error {
 			panic(err)
 		}
 	} else if system.Name == "windows" {
-		// TODO
+		fmt.Println("TODO")
 	}
 	fmt.Println("Finished installing packages:", packages)
-	return nil
 }

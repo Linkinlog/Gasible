@@ -9,16 +9,12 @@
 // Check out https://github.com/Linkinlog/gasible for more
 package main
 
-import (
-	"fmt"
+import "github.com/Linkinlog/gasible/cmd"
 
-	"github.com/Linkinlog/gasible/cmd/commandProcessor"
-)
-
-// main starts everything off, starting with our command processor.
+// main starts everything off, now handled by Cobra.
 func main() {
-	output := commandProcessor.ProcessCommand()
-	if output != nil {
-		fmt.Println(output)
+	err := cmd.Execute()
+	if err != nil {
+		panic(err)
 	}
 }

@@ -1,11 +1,5 @@
 package models
 
-import (
-	"os"
-
-	"gopkg.in/yaml.v3"
-)
-
 // Information relatie to the services we will configure.
 type ServicesConfig struct {
 	Installer  bool `yaml:"installer,omitempty"`
@@ -23,4 +17,3 @@ func (ServicesConfig) Default() *ServicesConfig {
 		Git:        true,
 	}
 }
-
