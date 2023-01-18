@@ -7,15 +7,15 @@ import (
 
 func TestParseGas(t *testing.T) {
 	// We need to make a YAML file but just make it
-//	err, file := makeDefaultYAML()
-//	if err != nil {
-//		panic(err)
-//	}
-//	// Then we need to parse it and make sure we get what we expect
-//	gas, err := ParseGas(file)
-//	if err != nil {
-//		panic(err)
-//	}
+	//	err, file := makeDefaultYAML()
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	// Then we need to parse it and make sure we get what we expect
+	//	gas, err := ParseGas(file)
+	//	if err != nil {
+	//		panic(err)
+	//	}
 	// What do we expect?
 	// TODO: Make test cases so we can go over everything in
 	// * CreateDefaults() and confirm it equals what we expected

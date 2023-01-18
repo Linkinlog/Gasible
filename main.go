@@ -13,8 +13,8 @@ import "github.com/Linkinlog/gasible/cmd"
 
 // main starts everything off, now handled by Cobra.
 func main() {
-    err := cmd.Execute()
-    if err != nil {
-        panic(err)
-    }
+	err := cmd.Execute()
+	if err != nil {
+		panic(err)
+	}
 }

@@ -23,9 +23,9 @@ var initializer = &cobra.Command{
 		conf.GlobalOpts.FilePath = filePath
 		conf.GlobalOpts.NoOp = noop
 		conf.FillFromFile()
-        err := commandProcessor.InitProcess(&conf)
-        if err != nil {
-            panic(err)
-        }
+		err := commandProcessor.InitProcess(&conf)
+		if err != nil {
+			panic(err)
+		}
 	},
 }

@@ -15,13 +15,13 @@ func InitProcess(conf *models.Config) error {
 
 	if conf.ServicesConfig.Installer {
 		wg.Add(1)
-		go installer.Installer(&conf.PackageInstallerConfig, &conf.GlobalOpts,  &wg)
+		go installer.Installer(&conf.PackageInstallerConfig, &conf.GlobalOpts, &wg)
 	}
 	// if conf.ServicesConfig.Ssh {
-		// TODO
+	// TODO
 	// }
 	// if conf.ServicesConfig.Teamviewer {
-		// TODO
+	// TODO
 	// }
 	wg.Wait()
 	return nil

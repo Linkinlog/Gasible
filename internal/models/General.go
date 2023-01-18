@@ -27,4 +27,3 @@ func (GeneralConfig) Default() *GeneralConfig {
 		},
 	}
 }
-

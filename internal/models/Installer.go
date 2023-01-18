@@ -38,8 +38,8 @@ func (p PackageInstallerConfig) CheckPMAndReturnPath() string {
 		panic(err)
 	}
 	//if os.Geteuid() != 0 {
-		// TODO handle this better
-		//panic("Error: Permission denied.")
+	// TODO handle this better
+	//panic("Error: Permission denied.")
 	//}
 	return path
 }

@@ -23,9 +23,9 @@ func Installer(c *models.PackageInstallerConfig, g *models.GlobalOpts, w *sync.W
 	packages := strings.Join(c.Packages, " ")
 	// Format all of the above into a string.
 	command := strings.Join([]string{pm, c.Args, packages}, " ")
-    // If we are running in NoOp mode, only echo the command
+	// If we are running in NoOp mode, only echo the command
 	if g.NoOp {
-        command = "echo Would have ran: " + command
+		command = "echo Would have ran: " + command
 	}
 
 	// Mac / Linux have the same path for env
@@ -55,7 +55,7 @@ func Installer(c *models.PackageInstallerConfig, g *models.GlobalOpts, w *sync.W
 			panic(err)
 		}
 	} else if system.Name == "windows" {
-        fmt.Println("TODO")
+		fmt.Println("TODO")
 	}
 	fmt.Println("Finished installing packages:", packages)
 }
