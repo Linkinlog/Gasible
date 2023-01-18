@@ -2,10 +2,8 @@ package models
 
 import (
 	"fmt"
-	"os"
+	// "os"
 	"os/exec"
-
-	"gopkg.in/yaml.v3"
 )
 
 // PackageInstallerConfig holds all fields fields
@@ -39,10 +37,10 @@ func (p PackageInstallerConfig) CheckPMAndReturnPath() string {
 		err := fmt.Sprintf("Error: Package manager %s not found.", pm)
 		panic(err)
 	}
-	if os.Geteuid() != 0 {
+	//if os.Geteuid() != 0 {
 		// TODO handle this better
 		//panic("Error: Permission denied.")
-	}
+	//}
 	return path
 }
 
@@ -62,4 +60,3 @@ func (PackageInstallerConfig) Default() *PackageInstallerConfig {
 		},
 	}
 }
-

@@ -1,11 +1,5 @@
 package models
 
-import (
-	"os"
-
-	"gopkg.in/yaml.v3"
-)
-
 // The credentials to the teamviewer account.
 // TODO Find a better way to handle this
 type TVCreds struct {
