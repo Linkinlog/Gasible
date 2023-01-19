@@ -1,6 +1,5 @@
 # Gasible 
-
-![Gasible logo](https://raw.githubusercontent.com/Linkinlog/gasible/.github/logo.jpeg)
+![Gasible logo](https://raw.githubusercontent.com/Linkinlog/Gasible/development/.github/logo.jpeg)
 
 Welcome to **Gasible**, the ultimate solution for automating the setup of your local development environment. Our fast and efficient CLI tool, written in pure Go, makes the process of setting up a new development environment as easy and streamlined as possible. With Gasible, you can have your development environment up and running in minutes, not hours.
 
