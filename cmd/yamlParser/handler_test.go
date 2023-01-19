@@ -1,58 +1,24 @@
-package yamlParser
+package yamlParser_test
 
 import (
-	// "os"
 	"testing"
+
+	"github.com/Linkinlog/gasible/cmd/yamlParser"
 )
 
-func TestParseGas(t *testing.T) {
-	// We need to make a YAML file but just make it
-	//	err, file := makeDefaultYAML()
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//	// Then we need to parse it and make sure we get what we expect
-	//	gas, err := ParseGas(file)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	// What do we expect?
-	// TODO: Make test cases so we can go over everything in
-	// * CreateDefaults() and confirm it equals what we expected
+func TestCreateDefaults(t *testing.T) {
+    type testCase struct{
+        // Filepath for testing
+        f string
+    }
+    testfile := t.TempDir() + "test.yml"
+    t1 := testCase{
+        f: testfile,
+    }
+    t.Run("TestCreateDefaults", func(t *testing.T) {
+        if err := yamlParser.CreateDefaults(t1.f); err != t1.ExpectedResponse {
+            t.Fatalf("Failed to create YAML defaults, got: %s", err.Error())
+        }
+    })
+
 }
-
-//func makeDefaultYAML() (error, string) {
-//	file, err := os.CreateTemp("", "temp")
-//	if err != nil {
-//		return err, ""
-//	}
-//	defer os.Remove(file.Name())
-//
-//	_, err = file.WriteString(defaultYAML)
-//	if err != nil {
-//		return err, ""
-//	}
-//	return nil, file.Name()
-//}
-
-// const defaultYAML = `
-// pkg-manager: dnf
-// packages:
-//     - python3-pip
-//     - util-linux-user
-//     - wget
-//     - neovim
-//     - zsh
-//     - docker
-//     - gh
-// installer: true
-// teamviewer: true
-// ssh: true
-// git: true
-// hostname: development-station
-// staticIP: 192.168.4.20
-// mask: 255.255.255.0
-// TeamViewerCreds:
-//     user: username
-//     pass: password
-// `
