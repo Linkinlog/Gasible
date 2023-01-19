@@ -9,14 +9,17 @@ import (
 
 // CreateDefaults will generate a YAML file
 // using the defaults we outline.
-func CreateDefaults() error {
+func CreateDefaults(file string) error {
+	if file == "" {
+		file = "default.yml"
+	}
 	Conf := models.Config{}.Default()
 	d, err := yaml.Marshal(&Conf)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile("default.yml", d, 0644)
+	err = os.WriteFile(file, d, 0644)
 	if err != nil {
 		return err
 	}

@@ -14,14 +14,12 @@ func TestInstallerWithDefaults(t *testing.T) {
 		c                string
 		noop             bool
 		Name             string
-		ExpectedResponse error
 	}
 	testCase := InstallerTestCase{
 		osHandler.GetCurrentSystem(),
 		installer.GetCmd(models.PackageInstallerConfig{}.Default()),
 		true,
 		"TestInstallerWithDefaults",
-		nil,
 	}
 	t.Run(testCase.Name, func(t *testing.T) {
 		if err := installer.Installer(testCase.s, testCase.c, testCase.noop); err != nil {

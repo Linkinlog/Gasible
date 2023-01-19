@@ -23,6 +23,6 @@ func Execute() error {
 }
 
 func init() {
-	RootCmd.PersistentFlags().StringVar(&CfgFile, "config", ".gas.yml", "config file")
-	RootCmd.PersistentFlags().BoolVar(&Noop, "noop", false, "No-Op command to run command without making any changes")
+	RootCmd.PersistentFlags().StringVarP(&CfgFile, "config", "c", ".gasible.yml", "config file")
+	RootCmd.PersistentFlags().BoolVar(&Noop, "noop", false, "Run command without making any changes")
 }
