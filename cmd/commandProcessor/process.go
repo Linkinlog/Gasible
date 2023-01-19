@@ -17,7 +17,7 @@ func InitProcess(conf *models.Config) error {
 	if conf.ServicesConfig.Installer {
 		wg.Add(1)
 		go func() {
-			err := installer.Installer(&conf.PackageInstallerConfig, &conf.GlobalOpts, &wg)
+			err := installer.Run(&conf.PackageInstallerConfig, &conf.GlobalOpts, &wg)
 			if err != nil {
 				errChan <- err
 			}

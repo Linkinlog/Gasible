@@ -18,9 +18,9 @@ type GeneralConfig struct {
 // Create the defaults and write them to *GeneralConfig.
 func (GeneralConfig) Default() *GeneralConfig {
 	return &GeneralConfig{
-		Hostname:       "development-station",
-		IP:             "192.168.4.20",
-		Mask:           "255.255.255.0",
+		Hostname: "development-station",
+		IP:       "192.168.4.20",
+		Mask:     "255.255.255.0",
 		TeamViewerCreds: TVCreds{
 			User: "username",
 			Pass: "password",

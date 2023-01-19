@@ -14,14 +14,19 @@ import (
 
 // Install the packages listed in the
 // packages section of the YAML file.
-func Installer(c *models.PackageInstallerConfig, g *models.GlobalOpts, w *sync.WaitGroup) error {
-	defer w.Done()
+func Run(c *models.PackageInstallerConfig, g *models.GlobalOpts, w *sync.WaitGroup) error {
 	// Verify the OS is supported.
 	system := osHandler.GetCurrentSystem()
 	// Format our command
-	command := setCmd(c)
+	command := GetCmd(c)
+	defer w.Done()
+
+	return Installer(system, command, g.NoOp)
+}
+
+func Installer(system *osHandler.System, command string, noop bool) error {
 	// If we are running in NoOp mode, only echo the command
-	if g.NoOp {
+	if noop {
 		command = "echo Would have ran: " + command
 	}
 	// Mac / Linux have the same path for env
@@ -47,7 +52,7 @@ func Installer(c *models.PackageInstallerConfig, g *models.GlobalOpts, w *sync.W
 	return nil
 }
 
-func setCmd(c *models.PackageInstallerConfig) string {
+func GetCmd(c *models.PackageInstallerConfig) string {
 	// Validate the package manager and get its root path.
 	pm := c.CheckPMAndReturnPath()
 	// Turn our slice of packages into a single string.
