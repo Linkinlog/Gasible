@@ -12,10 +12,16 @@ import (
 func InitProcess(conf *models.Config) error {
 	// Create a waitgroup so we can run all services at once.
 	var wg sync.WaitGroup
+	var errChan chan error
 
 	if conf.ServicesConfig.Installer {
 		wg.Add(1)
-		go installer.Installer(&conf.PackageInstallerConfig, &conf.GlobalOpts, &wg)
+		go func() {
+			err := installer.Installer(&conf.PackageInstallerConfig, &conf.GlobalOpts, &wg)
+			if err != nil {
+				errChan <- err
+			}
+		}()
 	}
 	// if conf.ServicesConfig.Ssh {
 	// TODO
@@ -24,5 +30,8 @@ func InitProcess(conf *models.Config) error {
 	// TODO
 	// }
 	wg.Wait()
+	if err := <-errChan; err != nil {
+		return err
+	}
 	return nil
 }
