@@ -1,63 +1,69 @@
-# Gasible
-A lightweight tool written in Go to automate aspects of setting up a local development environment.
-Written by Log
+# Gasible 
 
----
----
+![Gasible logo](https://raw.githubusercontent.com/Linkinlog/gasible/.github/logo.png)
 
-Currently, this tool aims to automate the following processes:
-- Installing packages
-- Using an existing bare Git repo to unload and sync all config files
-  - Or creating one
-- Configuring certain system services
-  - SSH, SSH Config, SSH Keys
-  - TeamViewer
-  - Hostname
-  - Static IP
+Welcome to **Gasible**, the ultimate solution for automating the setup of your local development environment. Our fast and efficient CLI tool, written in pure Go, makes the process of setting up a new development environment as easy and streamlined as possible. With Gasible, you can have your development environment up and running in minutes, not hours.
 
----
----
+## Features
+- Installs packages using your chosen package manager (dnf, apt, yum, pacman, etc)
+- Sets up a bare git repository for local config management, or uses an existing GitHub repo
+- Configures general settings such as hostname, IP, and DNS
+- Configures services such as SSH
+- Customizable configurations through a config file
+- Easy-to-use command-line interface
 
-## Usage
-
-Gasible can be ran via the command line as such
+## Installation
 ```bash
-gasible
+go install github.com/Linkinlog/gasible
 ```
 
-It will look for a `gas.yml` file in the directory that the executable is in and then go from there
+## Usage
+```bash
+gasible [command]
+```
 
----
----
+## Commands
+- `init`: Initializes a new development environment
+- `config`: Shows the current configuration
+- `update`: Updates packages and configurations
 
-## Configuring via gas.yml
+## Configuration
+Gasible uses a config file named `.gasible.yaml` for customization. You can specify your own package manager, repositories, and configurations in this file. By default, Gasible will look for this file in the home directory, but you can specify a different location by passing the `-c` or `--config` flag.
 
 Below is the default config featuring all the supported options and some explanation
 ```YAML
 ---
-# Package Configuration
-pkg-manager: "dnf"
-packages: # Packages to install
-  - "python3-pip"
-  - "util-linux-user"
-  - "wget"
-  - "neovim"
-  - "zsh"
-  - "docker"
-  - "gh"
-# Services we will set up
-services:
-  - teamviewer: true # By default we will install and enable teamviewer
-  - ssh: true # By default we will set up ssh to be enabled on boot, we will also create a ssh key and config file
-# General Configuration
-config:
-  - hostname: "development-station" # Set the hostname to be "development-station
-  - staticIP: # Sets the static IP, required IP and mas
-    - IP: "192.168.4.20" # Must be a valid IP/Subnet mask
-    - mask: "255.255.255.0" 
-  # TODO make this encrypted or store it better
-  - teamViewerCreds: # We can sign into teamviewer and enable easy logon if we have creds
-    - user: "username"
-    - pass: "password"
+# Package manager config
+pkg-manager-command: dnf
+command-args: install -y
+packages:
+    - python3-pip
+    - util-linux-user
+    - wget
+    - neovim
+    - zsh
+    - docker
+    - gh
+# Which processes to run
+installer: true
+teamviewer: true
+ssh: true
+git: true
+# General config
+hostname: development-station
+staticIP: 192.168.4.20
+mask: 255.255.255.0
+TeamViewerCreds:
+    user: username
+    pass: password
+
 ```
 
+## Contribution
+We welcome contributions to Gasible. If you find a bug or want to request a new feature, please open an issue. If you want to contribute code, please fork the repository and open a pull request. Our community is always looking for ways to improve and make Gasible even better.
+
+## License
+Gasible is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
+
+## Acknowledgements
+Gasible was inspired by other [similar](https://github.com/ansible/ansible) projects and we have used their practices as a reference. We are grateful for the contributions of the open-source community, and we hope that Gasible will be a valuable addition to it.
