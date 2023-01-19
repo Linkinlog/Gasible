@@ -1,6 +1,8 @@
+pwd := $(shell pwd)
 lint:
-	docker run --rm -v $(pwd):/app -w /app golangci/golangci-lint golangci-lint run -v
+	command golangci-lint run
 fmt:
-	gofmt -w ./
+	command gofmt -d -w $(pwd)
+neat: lint fmt
 
-.PHONY: lint fmt
+.PHONY: lint fmt neat
