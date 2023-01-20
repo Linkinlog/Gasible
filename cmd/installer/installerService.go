@@ -1,19 +1,14 @@
 package installer
 
 import (
-	"github.com/Linkinlog/gasible/cmd/osHandler"
 	"github.com/Linkinlog/gasible/internal/models"
 )
 
+// The relative options that we
+// will need to pass into Run.
 type InstallerOpts struct {
 	NoOp bool
-	Os   *osHandler.System
-}
-
-func Opts() *InstallerOpts {
-	newInstallOpts := &InstallerOpts{}
-	newInstallOpts.NoOp = false
-	return newInstallOpts
+	Os   *models.System
 }
 
 // Install the packages listed in the

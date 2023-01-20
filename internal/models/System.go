@@ -1,9 +1,9 @@
-// SupportSystems file
+// Systems file
 //
 // This file contains structs relative to
 // the operating system that we are setting up.
 // As well as functions to validate and set the target system.
-package osHandler
+package models
 
 import (
 	"errors"
@@ -12,6 +12,14 @@ import (
 	"runtime"
 )
 
+// System contains the name of the operating system and
+// the configs we want to configure for said OS.
+type System struct {
+	Name    string
+	Cmd     Cmd
+	Configs []config
+}
+
 // config contains the name of the configuration and
 // the path we should put the config files / clone the repo to.
 type config struct {
@@ -19,18 +27,32 @@ type config struct {
 	Path string
 }
 
+// Fields relative to the command we will execute.
 type Cmd struct {
 	Exec string
 	Args []string
 	Env  []string
 }
 
-// os contains the name of the operating system and
-// the configs we want to configure for said OS.
-type System struct {
-	Name    string
-	Cmd     Cmd
-	Configs []config
+// Executes the command string, or echo's out the command it would have ran.
+func (os System) Exec(noop bool, command string) error {
+	// Set up the command and handle noop
+	var execCmd *exec.Cmd
+	if noop {
+		args := append([]string{"Would have ran: ", os.Cmd.Exec}, os.Cmd.Args...)
+		execCmd = exec.Command("echo", args...)
+	} else {
+		execCmd = exec.Command(os.Cmd.Exec, os.Cmd.Args...)
+	}
+	execCmd.Args = append(execCmd.Args, command)
+	out, err := execCmd.Output()
+	if err != nil {
+		// Write the output of the error to the program log
+		log.Println(err)
+	} else {
+		log.Print(string(out))
+	}
+	return nil
 }
 
 // GetCurrentSystem returns the system struct
@@ -53,26 +75,6 @@ func StringToSystem(s string) (System, error) {
 	} else {
 		return System{}, errors.New("Unsupported system")
 	}
-}
-
-func (os System) Exec(noop bool, command string) error {
-	// Execute the command and prepare the output
-	var execCmd *exec.Cmd
-	if noop {
-		args := append([]string{"Would have ran: ", os.Cmd.Exec}, os.Cmd.Args...)
-		execCmd = exec.Command("echo", args...)
-	} else {
-		execCmd = exec.Command(os.Cmd.Exec, os.Cmd.Args...)
-	}
-	execCmd.Args = append(execCmd.Args, command)
-	out, err := execCmd.Output()
-	if err != nil {
-		// Write the output of the error to the program log
-		log.Println(err)
-	} else {
-		log.Print(string(out))
-	}
-	return nil
 }
 
 // supportedSystemsMap is a map so we can access
@@ -104,44 +106,4 @@ var linuxSystem = System{
 	},
 }
 
-// Default values for a windows OS.
-// var windowsSystem = System{
-// 	"windows",
-// 	"C:\\Windows\\System32\\cmd.exe -k",
-// 	[]string{},
-// 	[]config{
-// 		{
-// 			"neovim",
-// 			"TBD",
-// 		},
-// 		{
-// 			"tmux",
-// 			"TBD",
-// 		},
-// 		{
-// 			"zsh",
-// 			"TBD",
-// 		},
-// 	},
-// }
-
-// Default values for a mac OS.
-// var macSystem = System{
-// 	"mac",
-// 	"/usr/bin/env",
-// 	[]string{"sh -c"},
-// 	[]config{
-// 		{
-// 			"neovim",
-// 			".config/nvim/",
-// 		},
-// 		{
-// 			"tmux",
-// 			".config/tmux/",
-// 		},
-// 		{
-// 			"zsh",
-// 			".config/zsh/",
-// 		},
-// 	},
-// }
+// TODO: create Win/Mac

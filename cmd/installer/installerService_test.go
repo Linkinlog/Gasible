@@ -3,18 +3,17 @@ package installer_test
 import (
 	"testing"
 
-	"github.com/Linkinlog/gasible/cmd/osHandler"
 	"github.com/Linkinlog/gasible/internal/models"
 )
 
 func TestInstallerWithDefaults(t *testing.T) {
 	type InstallerTestCase struct {
-		s    *osHandler.System
+		s    *models.System
 		c    string
 		Name string
 	}
 	testCase := InstallerTestCase{
-		osHandler.GetCurrentSystem(),
+		models.GetCurrentSystem(),
 		models.PackageInstallerConfig{}.Default().GetCmd(),
 		"TestInstallerWithDefaults",
 	}

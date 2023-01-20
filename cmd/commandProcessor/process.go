@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/Linkinlog/gasible/cmd/installer"
-	"github.com/Linkinlog/gasible/cmd/osHandler"
 	"github.com/Linkinlog/gasible/internal/models"
 )
 
@@ -22,7 +21,7 @@ func InitProcess(conf *models.Config) error {
 			defer wg.Done()
 			opts := installer.InstallerOpts{
 				NoOp: conf.GlobalOpts.NoOp,
-				Os:   osHandler.GetCurrentSystem(),
+				Os:   models.GetCurrentSystem(),
 			}
 			err := opts.Run(&conf.PackageInstallerConfig)
 			if err != nil {
