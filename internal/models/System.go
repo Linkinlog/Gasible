@@ -48,7 +48,7 @@ func (os System) Exec(noop bool, command string) error {
 	out, err := execCmd.Output()
 	if err != nil {
 		// Write the output of the error to the program log
-		log.Println(err)
+        return err
 	} else {
 		log.Print(string(out))
 	}
