@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -38,12 +39,17 @@ func (Conf Config) Default() *Config {
 
 // Grab the config from the YAML and write it to the given struct.
 func (conf *Config) FillFromFile() {
-	file, err := os.ReadFile(conf.GlobalOpts.FilePath)
+	logFile := conf.GlobalOpts.FilePath
+	_, err := os.Stat(logFile)
 	if err != nil {
-		panic(err)
+		log.Fatalf("\nPanic: No file %s found.\nRun the generate command to make a new config", logFile)
+	}
+	file, err := os.ReadFile(logFile)
+	if err != nil {
+		log.Fatalf("\nPanic: Could read file %s", logFile)
 	}
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-		panic(err)
+		log.Fatalf("\nPanic: Could not Unmarshal %s into %v", logFile, &conf)
 	}
 }

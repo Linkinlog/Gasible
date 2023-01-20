@@ -2,9 +2,11 @@
 package commandProcessor
 
 import (
+	"log"
 	"sync"
 
 	"github.com/Linkinlog/gasible/cmd/installer"
+	"github.com/Linkinlog/gasible/cmd/osHandler"
 	"github.com/Linkinlog/gasible/internal/models"
 )
 
@@ -12,12 +14,17 @@ import (
 func InitProcess(conf *models.Config) error {
 	// Create a waitgroup so we can run all services at once.
 	var wg sync.WaitGroup
-	var errChan chan error
+	errChan := make(chan error, 1)
 
 	if conf.ServicesConfig.Installer {
 		wg.Add(1)
 		go func() {
-			err := installer.Run(&conf.PackageInstallerConfig, &conf.GlobalOpts, &wg)
+			defer wg.Done()
+			opts := installer.InstallerOpts{
+				NoOp: conf.GlobalOpts.NoOp,
+				Os:   osHandler.GetCurrentSystem(),
+			}
+			err := opts.Run(&conf.PackageInstallerConfig)
 			if err != nil {
 				errChan <- err
 			}
@@ -29,9 +36,16 @@ func InitProcess(conf *models.Config) error {
 	// if conf.ServicesConfig.Teamviewer {
 	// TODO
 	// }
+	// wait for all the goroutines to complete
 	wg.Wait()
-	if err := <-errChan; err != nil {
-		return err
+
+	// check if there were any errors
+	select {
+	case err := <-errChan:
+		log.Fatalf("errorChan: %v", err)
+		close(errChan)
+	default:
+		log.Println("all goroutines completed successfully")
 	}
 	return nil
 }
