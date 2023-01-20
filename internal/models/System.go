@@ -35,7 +35,7 @@ type Cmd struct {
 }
 
 // Executes the command string, or echo's out the command it would have ran.
-func (os System) Exec(noop bool, command string) error {
+func (os System) Exec(noop bool, command string) ([]byte, error) {
 	// Set up the command and handle noop
 	var execCmd *exec.Cmd
 	if noop {
@@ -45,14 +45,12 @@ func (os System) Exec(noop bool, command string) error {
 		execCmd = exec.Command(os.Cmd.Exec, os.Cmd.Args...)
 	}
 	execCmd.Args = append(execCmd.Args, command)
-	out, err := execCmd.Output()
+	log.Print("Beginning package installation! Please wait...")
+	out, err := execCmd.CombinedOutput()
 	if err != nil {
-		// Write the output of the error to the program log
-        return err
-	} else {
-		log.Print(string(out))
+		return []byte{}, err
 	}
-	return nil
+	return out, nil
 }
 
 // GetCurrentSystem returns the system struct
@@ -89,7 +87,7 @@ var supportedSystemsMap = map[string]System{
 var linuxSystem = System{
 	"linux",
 	Cmd{
-		"/usr/bin/env", []string{"sh -c"}, []string{}},
+		"/usr/bin/env", []string{"sh", "-c"}, []string{}},
 	[]config{
 		{
 			"neovim",

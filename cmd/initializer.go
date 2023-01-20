@@ -11,7 +11,7 @@ func init() {
 }
 
 var initializer = &cobra.Command{
-	Use:   "initializer",
+	Use:   "init",
 	Short: "Initialize standard setup",
 	Long:  `This will read from the config file and set up the system accordingly.`,
 	Run: func(cmd *cobra.Command, args []string) {

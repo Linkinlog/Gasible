@@ -12,7 +12,7 @@ type Config struct {
 	PackageInstallerConfig `yaml:",inline,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
-    GlobalOpts `yaml:"-"`
+	GlobalOpts             `yaml:"-"`
 }
 
 // Options to embed on our config that

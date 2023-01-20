@@ -18,7 +18,7 @@ func TestInstallerWithDefaults(t *testing.T) {
 		"TestInstallerWithDefaults",
 	}
 	t.Run(testCase.Name, func(t *testing.T) {
-		if err := testCase.s.Exec(true, testCase.c); err != nil {
+		if _, err := testCase.s.Exec(true, testCase.c); err != nil {
 			t.Fatalf("Failed installer test, err: %s", err.Error())
 		}
 	})
