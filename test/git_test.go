@@ -8,11 +8,11 @@ import (
 )
 
 func TestGitSetup(t *testing.T) {
-	gitOpts := models.GitServiceConfig{
+	gitConfig := models.GitServiceConfig{
 		Enabled: true,
 		Options: &models.Options{
 			User:     "Linkinlog",
-			Email:    "dahlton@dahlton.org",
+			Email:    "",
 			RepoURL:  "https://github.com/Linkinlog/.dotfiles.git",
 			RepoName: "",
 		},
@@ -21,7 +21,7 @@ func TestGitSetup(t *testing.T) {
 		NoOp:       false,
 		CreateRepo: false,
 	}
-	_, err := gitServiceOpts.Run(&gitOpts)
+	_, err := gitServiceOpts.Run(&gitConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
