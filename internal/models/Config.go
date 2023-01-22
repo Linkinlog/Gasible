@@ -1,3 +1,6 @@
+// Config model file.
+// This file defines the Config model and its methods.
+// The config model is a representation of the whole YAML configuration.
 package models
 
 import (
