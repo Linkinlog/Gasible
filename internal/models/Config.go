@@ -4,6 +4,7 @@
 package models
 
 import (
+	"errors"
 	"log"
 	"os"
 
@@ -13,6 +14,7 @@ import (
 // The entire config YAML.
 type Config struct {
 	PackageInstallerConfig `yaml:",inline,omitempty"`
+	GitServiceConfig       `yaml:"Git Config,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
 	GlobalOpts             `yaml:"-"`
@@ -28,12 +30,14 @@ type GlobalOpts struct {
 // Create the defaults and write them to *Config.
 func (Conf Config) Default() *Config {
 	pkgInstallConf := PackageInstallerConfig{}.Default()
+	gitServiceConf := GitServiceConfig{}.Default()
 	servicesConf := ServicesConfig{}.Default()
 	generalConf := GeneralConfig{}.Default()
 	globalOpts := &GlobalOpts{}
 
 	return &Config{
 		*pkgInstallConf,
+		*gitServiceConf,
 		*servicesConf,
 		*generalConf,
 		*globalOpts,
@@ -41,18 +45,19 @@ func (Conf Config) Default() *Config {
 }
 
 // Grab the config from the YAML and write it to the given struct.
-func (conf *Config) FillFromFile() {
-	logFile := conf.GlobalOpts.FilePath
-	_, err := os.Stat(logFile)
+func (conf *Config) FillFromFile() error {
+	yamlFile := conf.GlobalOpts.FilePath
+	_, err := os.Stat(yamlFile)
 	if err != nil {
-		log.Fatalf("\nPanic: No file %s found.\nRun the generate command to make a new config", logFile)
+		return errors.New("Panic: No file " + yamlFile + " found.\nRun the generate command to make a new config")
 	}
-	file, err := os.ReadFile(logFile)
+	file, err := os.ReadFile(yamlFile)
 	if err != nil {
-		log.Fatalf("\nPanic: Could read file %s", logFile)
+		log.Fatalf("\nPanic: Could read file %s", yamlFile)
 	}
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-		log.Fatalf("\nPanic: Could not Unmarshal %s into %v", logFile, &conf)
+		return err
 	}
+	return nil
 }

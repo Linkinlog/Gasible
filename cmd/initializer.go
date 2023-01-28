@@ -21,10 +21,11 @@ var initializer = &cobra.Command{
 		conf := models.Config{}
 		// Overwrite GlobalOpts with our defaults
 		conf.GlobalOpts.FilePath = filePath
-		conf.FillFromFile()
+		if err := conf.FillFromFile(); err != nil {
+			panic(err)
+		}
 		conf.GlobalOpts.NoOp = noop
-		err := commandProcessor.InitProcess(&conf)
-		if err != nil {
+		if err := commandProcessor.InitProcess(&conf); err != nil {
 			panic(err)
 		}
 	},

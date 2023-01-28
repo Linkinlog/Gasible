@@ -45,10 +45,10 @@ func (os System) Exec(noop bool, command string) ([]byte, error) {
 		execCmd = exec.Command(os.Cmd.Exec, os.Cmd.Args...)
 	}
 	execCmd.Args = append(execCmd.Args, command)
-	log.Print("Beginning package installation! Please wait...")
+	log.Println("Executing: " + execCmd.String())
 	out, err := execCmd.CombinedOutput()
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, errors.New(string(out))
 	}
 	return out, nil
 }
