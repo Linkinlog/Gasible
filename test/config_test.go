@@ -1,6 +1,7 @@
 package test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/Linkinlog/gasible/internal/models"
@@ -14,4 +15,18 @@ func TestConfigFillFromFileWithNoConfig(t *testing.T) {
 	if err := cf.FillFromFile(); err == nil {
 		t.Fatalf("Failed TestConfigFillFromFileWithNoConfig: %v", err)
 	}
+}
+
+// Test the FillFromFile method whenever there is no config file
+func TestConfigFillFromFileWithConfig(t *testing.T) {
+	cf := models.Config{}.Default()
+	file, err := os.CreateTemp("", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cf.GlobalOpts.FilePath = file.Name()
+	if err := cf.FillFromFile(); err != nil {
+		t.Fatal(err)
+	}
+
 }
