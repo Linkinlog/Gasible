@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/Linkinlog/gasible/cmd/gitService"
 	"github.com/Linkinlog/gasible/cmd/installer"
 	"github.com/Linkinlog/gasible/internal/models"
 )
@@ -14,8 +15,13 @@ import (
 func InitProcess(conf *models.Config) error {
 	// Create a waitgroup so we can run all services at once.
 	var wg sync.WaitGroup
-	errChan := make(chan error, 1)
-	outChan := make(chan string, 1)
+	// Open the log file for writing
+	logFile := "app.log"
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	logger := log.New(file, "", log.LstdFlags)
 
 	if conf.ServicesConfig.Installer {
 		wg.Add(1)
@@ -27,12 +33,32 @@ func InitProcess(conf *models.Config) error {
 			}
 			out, err := opts.Run(&conf.PackageInstallerConfig)
 			if err != nil {
-				errChan <- err
+				log.Fatal(err)
+				logger.Fatal(err)
 			} else if out != nil {
-				outChan <- string(out)
+				logger.Println(string(out))
 			}
 		}()
 	}
+	if conf.GitServiceConfig.Enabled {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			opts := gitService.Opts{
+				NoOp: conf.GlobalOpts.NoOp,
+			}
+			out, err := opts.Run(&conf.GitServiceConfig)
+			if err != nil {
+				logger.Println("Error: " + err.Error())
+			}
+			for _, e := range out {
+				if len(e) > 0 {
+					logger.Print(string(e))
+				}
+			}
+		}()
+	}
+
 	// if conf.ServicesConfig.Ssh {
 	// TODO
 	// }
@@ -42,24 +68,5 @@ func InitProcess(conf *models.Config) error {
 	// wait for all the goroutines to complete
 	wg.Wait()
 
-	// Open the log file for writing
-	logFile := "app.log"
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger := log.New(file, "", log.LstdFlags)
-
-	// check if there were any errors
-	select {
-	case err := <-errChan:
-		logger.Fatalf("errorChan: %v", err)
-		close(errChan)
-	case out := <-outChan:
-		logger.Println(out)
-		log.Printf("Much success! Check the %s file for details!", logFile)
-	default:
-		log.Println("Much success!")
-	}
 	return nil
 }

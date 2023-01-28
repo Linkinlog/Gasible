@@ -7,21 +7,31 @@ import (
 	"github.com/Linkinlog/gasible/internal/models"
 )
 
-func TestGitSetup(t *testing.T) {
-	gitConfig := models.GitServiceConfig{
+var (
+	gitConfig = models.GitServiceConfig{
 		Enabled: true,
-		Options: &models.Options{
+		Options: models.Options{
 			User:     "Linkinlog",
 			Email:    "",
 			RepoURL:  "https://github.com/Linkinlog/.dotfiles.git",
 			RepoName: "",
 		},
 	}
-	gitServiceOpts := gitService.Opts{
+	gitServiceOpts = gitService.Opts{
 		NoOp:       false,
 		CreateRepo: false,
 	}
+)
+
+func TestGitRun(t *testing.T) {
 	_, err := gitServiceOpts.Run(&gitConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGitSetup(t *testing.T) {
+	_, err := gitConfig.Setup(true)
 	if err != nil {
 		t.Fatal(err)
 	}
