@@ -1,7 +1,7 @@
 package models
 
 import (
-	"log"
+	"errors"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -23,7 +23,7 @@ type GlobalOpts struct {
 }
 
 // Create the defaults and write them to *Config.
-func (Conf Config) Default() *Config {
+func NewConfigWithDefaults() *Config {
 	pkgInstallConf := PackageInstallerConfig{}.Default()
 	servicesConf := ServicesConfig{}.Default()
 	generalConf := GeneralConfig{}.Default()
@@ -38,18 +38,20 @@ func (Conf Config) Default() *Config {
 }
 
 // Grab the config from the YAML and write it to the given struct.
-func (conf *Config) FillFromFile() {
+func (conf *Config) LoadFromFile() error {
 	logFile := conf.GlobalOpts.FilePath
 	_, err := os.Stat(logFile)
 	if err != nil {
-		log.Fatalf("\nPanic: No file %s found.\nRun the generate command to make a new config", logFile)
+		return errors.New("Config file found.")
 	}
 	file, err := os.ReadFile(logFile)
 	if err != nil {
-		log.Fatalf("\nPanic: Could read file %s", logFile)
+		return errors.New("Could read from config file.")
 	}
 	err = yaml.Unmarshal(file, &conf)
 	if err != nil {
-		log.Fatalf("\nPanic: Could not Unmarshal %s into %v", logFile, &conf)
+		return errors.New("Could not Unmarshal Config file.")
 	}
+
+	return nil
 }

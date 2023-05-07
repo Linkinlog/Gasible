@@ -15,7 +15,10 @@ type InstallerOpts struct {
 // packages section of the YAML file.
 func (opts *InstallerOpts) Run(c *models.PackageInstallerConfig) ([]byte, error) {
 	// Format our command
-	command := c.GetCmd()
+	command, err := c.GetCmd()
+	if err != nil {
+		return []byte{}, err
+	}
 
 	return opts.Os.Exec(command)
 }

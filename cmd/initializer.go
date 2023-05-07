@@ -14,18 +14,22 @@ var initializer = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize standard setup",
 	Long:  `This will read from the config file and set up the system accordingly.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		filePath, _ := cmd.Flags().GetString("config")
 		noop, _ := cmd.Flags().GetBool("noop")
 		// Create a config struct and fill it from the config file.
 		conf := models.Config{}
+		err := conf.LoadFromFile()
+		if err != nil {
+			return err
+		}
 		// Overwrite GlobalOpts with our defaults
 		conf.GlobalOpts.FilePath = filePath
-		conf.FillFromFile()
 		conf.GlobalOpts.NoOp = noop
-		err := commandProcessor.InitProcess(&conf)
+		err = commandProcessor.InitProcess(&conf)
 		if err != nil {
-			panic(err)
+			return err
 		}
+		return nil
 	},
 }

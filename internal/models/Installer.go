@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -26,35 +27,38 @@ var supportedPM = map[string]bool{
 
 // Check if the package manager is supported,
 // and if so, return the full path to it.
-func CheckPMAndReturnPath(pkgManager string) string {
+func CheckPMAndReturnPath(pkgManager string) (string, error) {
 	pm := pkgManager
 	if _, ok := supportedPM[pm]; !ok {
-		err := fmt.Sprintf("Error: Package manager %s not found.", pm)
-		panic(err)
+		err := fmt.Sprintf("Error: Package manager %s not supported.", pm)
+		return "", errors.New(err)
 	}
 	path, err := exec.LookPath(pm)
 	if err != nil {
 		err := fmt.Sprintf("Error: Package manager %s not found.", pm)
-		panic(err)
+		return "", errors.New(err)
 	}
 	//if os.Geteuid() != 0 {
 	// TODO handle this better
 	//panic("Error: Permission denied.")
 	//}
-	return path
+	return path, nil
 }
 
 // GetCmd returns a formatted string to install pkgs.
 // It contains the pkg managers full path and arguments,
 // and all the packages for it to install.
-func (c PackageInstallerConfig) GetCmd() string {
+func (c PackageInstallerConfig) GetCmd() (string, error) {
 	// Validate the package manager and get its root path.
-	pm := CheckPMAndReturnPath(c.Manager)
+	pm, err := CheckPMAndReturnPath(c.Manager)
+	if err != nil {
+		return "", err
+	}
 	// Turn our slice of packages into a single string.
 	packages := strings.Join(c.Packages, " ")
 	// Format all of the above into a string.
 	command := strings.Join([]string{pm, c.Args, packages}, " ")
-	return command
+	return command, nil
 }
 
 // Populate the struct with the default config for the package installer.

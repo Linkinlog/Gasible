@@ -13,7 +13,7 @@ func CreateDefaults(file string) error {
 	if file == "" {
 		file = "default.yml"
 	}
-	Conf := models.Config{}.Default()
+	Conf := models.NewConfigWithDefaults()
 	d, err := yaml.Marshal(&Conf)
 	if err != nil {
 		return err
