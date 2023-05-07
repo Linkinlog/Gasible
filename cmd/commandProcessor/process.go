@@ -4,6 +4,7 @@ package commandProcessor
 import (
 	"log"
 	"os"
+	"runtime"
 	"sync"
 
 	"github.com/Linkinlog/gasible/cmd/installer"
@@ -23,7 +24,10 @@ func InitProcess(conf *models.Config) error {
 			defer wg.Done()
 			opts := installer.InstallerOpts{
 				NoOp: conf.GlobalOpts.NoOp,
-				Os:   models.GetCurrentSystem(),
+				Os: &models.System{
+					Name:   runtime.GOOS,
+					Runner: models.RealRunner{},
+				},
 			}
 			out, err := opts.Run(&conf.PackageInstallerConfig)
 			if err != nil {

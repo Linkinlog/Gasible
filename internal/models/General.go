@@ -7,20 +7,20 @@ type TVCreds struct {
 	Pass string `yaml:"pass,omitempty"`
 }
 
-// General configs relating to system setup.
+// GeneralConfig holds general configurations related to system setup.
 type GeneralConfig struct {
 	Hostname        string  `yaml:"hostname,omitempty"`
-	IP              string  `yaml:"staticIP,omitempty"`
-	Mask            string  `yaml:"mask,omitempty"`
+	StaticIP        string  `yaml:"staticIP,omitempty"`
+	SubnetMask      string  `yaml:"subnetMask,omitempty"`
 	TeamViewerCreds TVCreds `yaml:"TeamViewerCreds,omitempty"`
 }
 
-// Create the defaults and write them to *GeneralConfig.
+// Default creates a GeneralConfig object with default values.
 func (GeneralConfig) Default() *GeneralConfig {
 	return &GeneralConfig{
-		Hostname: "development-station",
-		IP:       "192.168.4.20",
-		Mask:     "255.255.255.0",
+		Hostname:   "development-station",
+		StaticIP:   "192.168.4.20",
+		SubnetMask: "255.255.255.0",
 		TeamViewerCreds: TVCreds{
 			User: "username",
 			Pass: "password",
