@@ -17,5 +17,5 @@ func (opts *InstallerOpts) Run(c *models.PackageInstallerConfig) ([]byte, error)
 	// Format our command
 	command := c.GetCmd()
 
-	return opts.Os.Exec(opts.NoOp, command)
+	return opts.Os.Exec(command)
 }

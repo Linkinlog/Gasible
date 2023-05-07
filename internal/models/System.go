@@ -6,44 +6,31 @@
 package models
 
 import (
-	"errors"
 	"log"
 	"os/exec"
-	"runtime"
 )
+
+type CmdRunner interface {
+	Command(name string, arg ...string) *exec.Cmd
+}
+
+type RealRunner struct{}
+
+func (r RealRunner) Command(name string, arg ...string) *exec.Cmd {
+	return exec.Command(name, arg...)
+}
 
 // System contains the name of the operating system and
 // the configs we want to configure for said OS.
 type System struct {
-	Name    string
-	Cmd     Cmd
-	Configs []config
-}
-
-// config contains the name of the configuration and
-// the path we should put the config files / clone the repo to.
-type config struct {
-	Name string
-	Path string
-}
-
-// Fields relative to the command we will execute.
-type Cmd struct {
-	Exec string
-	Args []string
-	Env  []string
+	Name   string
+	Runner CmdRunner
 }
 
 // Executes the command string, or echo's out the command it would have ran.
-func (os System) Exec(noop bool, command string) ([]byte, error) {
+func (os System) Exec(command string, args ...string) ([]byte, error) {
 	// Set up the command and handle noop
-	var execCmd *exec.Cmd
-	if noop {
-		args := append([]string{"Would have ran: ", os.Cmd.Exec}, os.Cmd.Args...)
-		execCmd = exec.Command("echo", args...)
-	} else {
-		execCmd = exec.Command(os.Cmd.Exec, os.Cmd.Args...)
-	}
+	execCmd := os.Runner.Command(command, args...)
 	execCmd.Args = append(execCmd.Args, command)
 	log.Print("Beginning package installation! Please wait...")
 	out, err := execCmd.CombinedOutput()
