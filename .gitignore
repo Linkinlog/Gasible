@@ -9,9 +9,6 @@ gasible
 TODO.md
 installLog.txt
 
-# Our all YAML config files
-*.yml
-
 # Test binary, built with `go test -c`
 *.test
 
