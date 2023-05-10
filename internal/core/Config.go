@@ -8,7 +8,7 @@ import (
 )
 
 // The entire config YAML.
-type Config struct {
+type ConfigModel struct {
 	PackageInstallerConfig `yaml:",inline,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
@@ -23,13 +23,13 @@ type GlobalOpts struct {
 }
 
 // Create the defaults and write them to *Config.
-func NewConfigWithDefaults() *Config {
+func NewConfigWithDefaults() ConfigModel {
 	pkgInstallConf := PackageInstallerConfig{}.Default()
 	servicesConf := ServicesConfig{}.Default()
 	generalConf := GeneralConfig{}.Default()
 	globalOpts := &GlobalOpts{}
 
-	return &Config{
+	return ConfigModel{
 		*pkgInstallConf,
 		*servicesConf,
 		*generalConf,
@@ -37,8 +37,27 @@ func NewConfigWithDefaults() *Config {
 	}
 }
 
+// Create the defaults and write them to *Config.
+//
+// TODO better handling of this.
+func NewConfigFromFile() *ConfigModel {
+	conf := &ConfigModel{
+		PackageInstallerConfig{},
+		ServicesConfig{},
+		GeneralConfig{},
+		GlobalOpts{},
+	}
+	if err := conf.LoadFromFile(); err != nil {
+		panic(err)
+	}
+	return conf
+}
+
+// This is the ConfigModel for the running application.
+var Config = NewConfigFromFile()
+
 // Grab the config from the YAML and write it to the given struct.
-func (conf *Config) LoadFromFile() error {
+func (conf *ConfigModel) LoadFromFile() error {
 	logFile := conf.GlobalOpts.FilePath
 	_, err := os.Stat(logFile)
 	if err != nil {

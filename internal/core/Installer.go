@@ -11,9 +11,36 @@ import (
 // relative to the package installer service.
 type PackageInstallerConfig struct {
 	Manager  string   `yaml:"pkg-manager-command,omitempty"`
-	Args     string   `yaml:"command-args,omitempty"`
 	Packages []string `yaml:"packages"`
 }
+
+type PackageInstallerOpts struct {
+	AutoConfirmOpt string
+	QuietOpt       string
+}
+
+type PackageInstallerSubCmds struct {
+	InstallSubCmd string
+	RemoveSubCmd  string
+	UpdateSubCmd  string
+	UpgradeSubCmd string
+}
+
+type PackageInstaller interface {
+	GetExecutablePath(installerConfig *PackageInstallerConfig) string
+	GetPackages(installerConfig *PackageInstallerConfig) []string
+	GetSubCommands() *PackageInstallerSubCmds
+	GetCommandOptions() *PackageInstallerOpts
+}
+
+// var Aptitude = PackageInstaller{
+// 	AutoConfirmOpt: "-yy",
+// 	QuietOpt:       "-q",
+// 	InstallCmd:     "install",
+// 	RemoveCmd:      "remove",
+// 	UpdateCmd:      "update",
+// 	UpgradeCmd:     "upgrade",
+// }
 
 // Map to validate if a package manager is supported.
 var supportedPM = map[string]bool{
