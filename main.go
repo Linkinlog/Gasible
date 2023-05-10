@@ -9,7 +9,10 @@
 // Check out https://github.com/Linkinlog/gasible for more
 package main
 
-import "github.com/Linkinlog/gasible/cmd"
+import (
+	"github.com/Linkinlog/gasible/cmd"
+	_ "github.com/Linkinlog/gasible/modules"
+)
 
 // main starts everything off, now handled by Cobra.
 func main() {
