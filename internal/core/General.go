@@ -1,4 +1,4 @@
-package models
+package core
 
 // The credentials to the teamviewer account.
 // TODO Find a better way to handle this

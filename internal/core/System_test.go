@@ -1,4 +1,4 @@
-package models_test
+package core_test
 
 import (
 	"fmt"
@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/Linkinlog/gasible/internal/models"
+	"github.com/Linkinlog/gasible/internal/core"
 )
 
 type InstallerTestCase struct {
-	system *models.System
+	system *core.System
 	Name   string
 }
 
@@ -34,7 +34,7 @@ func TestSystemMock(t *testing.T) {
 
 func TestSystemExec(t *testing.T) {
 	mockTestRunner := MockCommandRunner{}
-	system := models.System{
+	system := core.System{
 		Name:   "TestOs",
 		Runner: mockTestRunner,
 	}

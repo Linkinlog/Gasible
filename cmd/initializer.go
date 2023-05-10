@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/Linkinlog/gasible/cmd/commandProcessor"
-	"github.com/Linkinlog/gasible/internal/models"
+	"github.com/Linkinlog/gasible/internal/core"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var initializer = &cobra.Command{
 		filePath, _ := cmd.Flags().GetString("config")
 		noop, _ := cmd.Flags().GetBool("noop")
 		// Create a config struct and fill it from the config file.
-		conf := models.Config{}
+		conf := core.ConfigModel{}
 		err := conf.LoadFromFile()
 		if err != nil {
 			return err

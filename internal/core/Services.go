@@ -1,4 +1,4 @@
-package models
+package core
 
 // Information relatie to the services we will configure.
 type ServicesConfig struct {

@@ -3,7 +3,7 @@ package yamlParser
 import (
 	"os"
 
-	"github.com/Linkinlog/gasible/internal/models"
+	"github.com/Linkinlog/gasible/internal/core"
 	"gopkg.in/yaml.v3"
 )
 
@@ -13,7 +13,7 @@ func CreateDefaults(file string) error {
 	if file == "" {
 		file = "default.yml"
 	}
-	Conf := models.NewConfigWithDefaults()
+	Conf := core.NewConfigWithDefaults()
 	d, err := yaml.Marshal(&Conf)
 	if err != nil {
 		return err
