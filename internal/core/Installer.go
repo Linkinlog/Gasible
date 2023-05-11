@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-// PackageInstallerConfig holds all fields fields
+// PackageManagerConfig holds all fields fields
 // relative to the package installer service.
-type PackageInstallerConfig struct {
 	Manager  string   `yaml:"pkg-manager-command,omitempty"`
 	Packages []string `yaml:"packages"`
+type PackageManagerConfig struct {
 }
 
-type PackageInstallerOpts struct {
+type PackageManagerOpts struct {
 	AutoConfirmOpt string
 	QuietOpt       string
 }
@@ -26,11 +26,9 @@ type PackageInstallerSubCmds struct {
 	UpgradeSubCmd string
 }
 
-type PackageInstaller interface {
-	GetExecutablePath(installerConfig *PackageInstallerConfig) string
-	GetPackages(installerConfig *PackageInstallerConfig) []string
-	GetSubCommands() *PackageInstallerSubCmds
-	GetCommandOptions() *PackageInstallerOpts
+type PackageManager interface {
+	GetSubCommands() *PackageManagerArgs
+	GetCommandOptions() *PackageManagerOpts
 }
 
 // var Aptitude = PackageInstaller{

@@ -13,9 +13,9 @@ type InstallerOpts struct {
 
 // Install the packages listed in the
 // packages section of the YAML file.
-func (opts *InstallerOpts) Run(c *core.PackageInstallerConfig) ([]byte, error) {
+func (opts *InstallerOpts) Run(c *core.PackageManagerConfig) ([]byte, error) {
 	// Format our command
-	command, err := c.Command()
+	command, err := c.GetInstallCommand()
 	if err != nil {
 		return []byte{}, err
 	}

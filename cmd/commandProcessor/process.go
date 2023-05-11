@@ -29,7 +29,7 @@ func InitProcess(conf *core.ConfigModel) error {
 					Runner: core.RealRunner{},
 				},
 			}
-			out, err := opts.Run(&conf.PackageInstallerConfig)
+			out, err := opts.Run(&conf.PackageManagerConfig)
 			if err != nil {
 				errChan <- err
 			} else if out != nil {

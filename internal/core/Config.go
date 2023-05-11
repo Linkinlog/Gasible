@@ -9,7 +9,7 @@ import (
 
 // The entire config YAML.
 type ConfigModel struct {
-	PackageInstallerConfig `yaml:",inline,omitempty"`
+	PackageManagerConfig `yaml:",inline,omitempty"`
 	ServicesConfig         `yaml:",inline,omitempty"`
 	GeneralConfig          `yaml:",inline,omitempty"`
 	GlobalOpts             `yaml:"-"`
@@ -24,7 +24,7 @@ type GlobalOpts struct {
 
 // Create the defaults and write them to *Config.
 func NewConfigWithDefaults() ConfigModel {
-	pkgInstallConf := PackageInstallerConfig{}.Default()
+	pkgInstallConf := PackageManagerConfig{}.Default()
 	servicesConf := ServicesConfig{}.Default()
 	generalConf := GeneralConfig{}.Default()
 	globalOpts := &GlobalOpts{}
@@ -42,7 +42,7 @@ func NewConfigWithDefaults() ConfigModel {
 // TODO better handling of this.
 func NewConfigFromFile() *ConfigModel {
 	conf := &ConfigModel{
-		PackageInstallerConfig{},
+		PackageManagerConfig{},
 		ServicesConfig{},
 		GeneralConfig{},
 		GlobalOpts{},
