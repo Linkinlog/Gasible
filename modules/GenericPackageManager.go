@@ -3,11 +3,8 @@ package modules
 import "github.com/Linkinlog/gasible/internal/core"
 
 type GenericPackageManager struct {
-	Name: string,
-
+	Name string
 }
-
-
 
 func init() {
 	core.ModuleRegistry.Register("GenericPackageManager", &GenericPackageManager{})

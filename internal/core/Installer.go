@@ -9,9 +9,10 @@ import (
 
 // PackageManagerConfig holds all fields fields
 // relative to the package installer service.
-	Manager  string   `yaml:"pkg-manager-command,omitempty"`
-	Packages []string `yaml:"packages"`
 type PackageManagerConfig struct {
+	Manager       string         `yaml:"pkg-manager-command,omitempty"`
+	Packages      []string       `yaml:"packages"`
+	ChosenManager PackageManager `yaml:"-"`
 }
 
 type PackageManagerOpts struct {
@@ -19,11 +20,11 @@ type PackageManagerOpts struct {
 	QuietOpt       string
 }
 
-type PackageInstallerSubCmds struct {
-	InstallSubCmd string
-	RemoveSubCmd  string
-	UpdateSubCmd  string
-	UpgradeSubCmd string
+type PackageManagerArgs struct {
+	InstallArg string
+	RemoveArg  string
+	UpdateArg  string
+	UpgradeArg string
 }
 
 type PackageManager interface {
@@ -31,36 +32,15 @@ type PackageManager interface {
 	GetCommandOptions() *PackageManagerOpts
 }
 
-// var Aptitude = PackageInstaller{
-// 	AutoConfirmOpt: "-yy",
-// 	QuietOpt:       "-q",
-// 	InstallCmd:     "install",
-// 	RemoveCmd:      "remove",
-// 	UpdateCmd:      "update",
-// 	UpgradeCmd:     "upgrade",
-// }
-
-// Map to validate if a package manager is supported.
-var supportedPM = map[string]bool{
-	"apt-get": true,
-	"yum":     true,
-	"dnf":     true,
-	"zypper":  true,
-	"pacman":  true,
-	"winget":  true,
-}
-
-// Check if the package manager is supported,
+// Check if the package manager is in $PATH,
 // and if so, return the full path to it.
-func CheckPMAndReturnPath(pkgManager string) (string, error) {
-	pm := pkgManager
-	if _, ok := supportedPM[pm]; !ok {
-		err := fmt.Sprintf("Error: Package manager %s not supported.", pm)
-		return "", errors.New(err)
-	}
-	path, err := exec.LookPath(pm)
+func (pkgInstallConf *PackageManagerConfig) GetManagerPath() (string, error) {
+	path, err := exec.LookPath(pkgInstallConf.Manager)
 	if err != nil {
-		err := fmt.Sprintf("Error: Package manager %s not found.", pm)
+		err := fmt.Sprintf(
+			"Error: Package manager %s not found.",
+			pkgInstallConf.Manager,
+		)
 		return "", errors.New(err)
 	}
 	//if os.Geteuid() != 0 {
@@ -70,27 +50,30 @@ func CheckPMAndReturnPath(pkgManager string) (string, error) {
 	return path, nil
 }
 
-// GetCmd returns a formatted string to install pkgs.
+// GetInstallCommand returns a formatted string to install pkgs.
 // It contains the pkg managers full path and arguments,
-// and all the packages for it to install.
-func (c PackageInstallerConfig) GetCmd() (string, error) {
+// as well as all the packages for it to install.
+func (c PackageManagerConfig) GetInstallCommand() (string, error) {
 	// Validate the package manager and get its root path.
-	pm, err := CheckPMAndReturnPath(c.Manager)
+	pkgManager, err := c.GetManagerPath()
 	if err != nil {
 		return "", err
 	}
-	// Turn our slice of packages into a single string.
-	packages := strings.Join(c.Packages, " ")
 	// Format all of the above into a string.
-	command := strings.Join([]string{pm, c.Args, packages}, " ")
+	command := strings.Join([]string{
+		pkgManager,
+		c.ChosenManager.GetSubCommands().InstallArg,
+		strings.Join(c.Packages, " "),
+		c.ChosenManager.GetCommandOptions().AutoConfirmOpt,
+		c.ChosenManager.GetCommandOptions().QuietOpt,
+	}, " ")
 	return command, nil
 }
 
 // Populate the struct with the default config for the package installer.
-func (PackageInstallerConfig) Default() *PackageInstallerConfig {
-	return &PackageInstallerConfig{
-		Manager: "dnf",
-		Args:    "install -y",
+func (PackageManagerConfig) Default() *PackageManagerConfig {
+	return &PackageManagerConfig{
+		Manager: "apt",
 		Packages: []string{
 			"python3-pip",
 			"util-linux-user",
