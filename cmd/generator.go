@@ -15,8 +15,9 @@ var generatorCmd = &cobra.Command{
 	Long: `This will create a default YAML file using the 
   sensible defaults we provided.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cfg, _ := cmd.Flags().GetString("config")
-		err := yamlParser.CreateDefaults(cfg)
+		// TODO generate a config relative to the config in the executable
+		// since we are embedding the config file now.
+		err := yamlParser.CreateDefaults()
 		if err != nil {
 			panic(err)
 		}

@@ -75,13 +75,7 @@ func (PackageManagerConfig) Default() *PackageManagerConfig {
 	return &PackageManagerConfig{
 		Manager: "apt",
 		Packages: []string{
-			"python3-pip",
-			"util-linux-user",
-			"wget",
 			"neovim",
-			"zsh",
-			"docker",
-			"gh",
 		},
 	}
 }

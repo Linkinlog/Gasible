@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"os"
 
 	"gopkg.in/yaml.v3"
 )
@@ -10,9 +9,9 @@ import (
 // The entire config YAML.
 type ConfigModel struct {
 	PackageManagerConfig `yaml:",inline,omitempty"`
-	ServicesConfig         `yaml:",inline,omitempty"`
-	GeneralConfig          `yaml:",inline,omitempty"`
-	GlobalOpts             `yaml:"-"`
+	ServicesConfig       `yaml:",inline,omitempty"`
+	GeneralConfig        `yaml:",inline,omitempty"`
+	GlobalOpts           `yaml:"-"`
 }
 
 // Options to embed on our config that
@@ -38,36 +37,23 @@ func NewConfigWithDefaults() ConfigModel {
 }
 
 // Create the defaults and write them to *Config.
-//
-// TODO better handling of this.
-func NewConfigFromFile() *ConfigModel {
+func NewConfigFromFile(configFile string) *ConfigModel {
 	conf := &ConfigModel{
 		PackageManagerConfig{},
 		ServicesConfig{},
 		GeneralConfig{},
 		GlobalOpts{},
 	}
-	if err := conf.LoadFromFile(); err != nil {
+	if err := conf.LoadFromFile(configFile); err != nil {
+		// TODO not a fan of panicing but itll work for now
 		panic(err)
 	}
 	return conf
 }
 
-// This is the ConfigModel for the running application.
-var Config = NewConfigFromFile()
-
 // Grab the config from the YAML and write it to the given struct.
-func (conf *ConfigModel) LoadFromFile() error {
-	logFile := conf.GlobalOpts.FilePath
-	_, err := os.Stat(logFile)
-	if err != nil {
-		return errors.New("Config file found.")
-	}
-	file, err := os.ReadFile(logFile)
-	if err != nil {
-		return errors.New("Could read from config file.")
-	}
-	err = yaml.Unmarshal(file, &conf)
+func (conf *ConfigModel) LoadFromFile(configFile string) error {
+	err := yaml.Unmarshal([]byte(configFile), &conf)
 	if err != nil {
 		return errors.New("Could not Unmarshal Config file.")
 	}

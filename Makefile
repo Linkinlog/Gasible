@@ -17,7 +17,7 @@ fmt:
 	command gofmt -d -w $(PWD)
 
 test:
-	command go test ./...
+	command go test ./... -v
 
 neat: lint fmt
 

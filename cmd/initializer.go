@@ -19,14 +19,10 @@ var initializer = &cobra.Command{
 		noop, _ := cmd.Flags().GetBool("noop")
 		// Create a config struct and fill it from the config file.
 		conf := core.ConfigModel{}
-		err := conf.LoadFromFile()
-		if err != nil {
-			return err
-		}
 		// Overwrite GlobalOpts with our defaults
 		conf.GlobalOpts.FilePath = filePath
 		conf.GlobalOpts.NoOp = noop
-		err = commandProcessor.InitProcess(&conf)
+		err := commandProcessor.InitProcess(&conf)
 		if err != nil {
 			return err
 		}
