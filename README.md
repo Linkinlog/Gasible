@@ -27,7 +27,7 @@ gasible [command]
 - `update`: Updates packages and configurations
 
 ## Configuration
-Gasible uses a config file named `.gasible.yaml` for customization. You can specify your own package manager, repositories, and configurations in this file. By default, Gasible will look for this file in the home directory, but you can specify a different location by passing the `-c` or `--config` flag.
+Gasible uses a config file named `config.yml` for customization. You can specify your own package manager, repositories, and configurations in this file. By default, Gasible will look for this file in the home directory, but you can specify a different location by passing the `-c` or `--config` flag.
 
 Below is the default config featuring all the supported options and some explanation
 ```YAML

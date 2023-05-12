@@ -6,8 +6,7 @@ import (
 
 var (
 	// Used for flags.
-	CfgFile string
-	Noop    bool
+	Noop bool
 
 	RootCmd = &cobra.Command{
 		Use:   "gasible",
@@ -23,6 +22,5 @@ func Execute() error {
 }
 
 func init() {
-	RootCmd.PersistentFlags().StringVarP(&CfgFile, "config", "c", ".gasible.yml", "config file")
 	RootCmd.PersistentFlags().BoolVar(&Noop, "noop", false, "Run command without making any changes")
 }

@@ -8,11 +8,11 @@ import (
 	"sync"
 
 	"github.com/Linkinlog/gasible/cmd/installer"
-	"github.com/Linkinlog/gasible/internal/models"
+	"github.com/Linkinlog/gasible/internal/core"
 )
 
 // Start the machine, handle which services to set up.
-func InitProcess(conf *models.Config) error {
+func InitProcess(conf *core.ConfigModel) error {
 	// Create a waitgroup so we can run all services at once.
 	var wg sync.WaitGroup
 	errChan := make(chan error, 1)
@@ -24,12 +24,12 @@ func InitProcess(conf *models.Config) error {
 			defer wg.Done()
 			opts := installer.InstallerOpts{
 				NoOp: conf.GlobalOpts.NoOp,
-				Os: &models.System{
+				Os: &core.System{
 					Name:   runtime.GOOS,
-					Runner: models.RealRunner{},
+					Runner: core.RealRunner{},
 				},
 			}
-			out, err := opts.Run(&conf.PackageInstallerConfig)
+			out, err := opts.Run(&conf.PackageManagerConfig)
 			if err != nil {
 				errChan <- err
 			} else if out != nil {

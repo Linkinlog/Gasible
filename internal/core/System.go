@@ -3,7 +3,7 @@
 // This file contains structs relative to
 // the operating system that we are setting up.
 // As well as functions to validate and set the target system.
-package models
+package core
 
 import (
 	"log"

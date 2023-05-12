@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/Linkinlog/gasible/cmd/commandProcessor"
-	"github.com/Linkinlog/gasible/internal/models"
+	"github.com/Linkinlog/gasible/internal/core"
 	"github.com/spf13/cobra"
 )
 
@@ -18,15 +18,11 @@ var initializer = &cobra.Command{
 		filePath, _ := cmd.Flags().GetString("config")
 		noop, _ := cmd.Flags().GetBool("noop")
 		// Create a config struct and fill it from the config file.
-		conf := models.Config{}
-		err := conf.LoadFromFile()
-		if err != nil {
-			return err
-		}
+		conf := core.ConfigModel{}
 		// Overwrite GlobalOpts with our defaults
 		conf.GlobalOpts.FilePath = filePath
 		conf.GlobalOpts.NoOp = noop
-		err = commandProcessor.InitProcess(&conf)
+		err := commandProcessor.InitProcess(&conf)
 		if err != nil {
 			return err
 		}
