@@ -1,6 +1,7 @@
 pkg-manager-command: apt
 packages:
     - neovim
+    - wget
 installer: true
 teamviewer: true
 ssh: true
@@ -8,6 +9,3 @@ git: true
 hostname: development-station
 staticIP: 192.168.4.20
 subnetMask: 255.255.255.0
-TeamViewerCreds:
-    user: username
-    pass: password

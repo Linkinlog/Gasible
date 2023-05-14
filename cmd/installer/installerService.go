@@ -4,16 +4,16 @@ import (
 	"github.com/Linkinlog/gasible/internal/core"
 )
 
-// The relative options that we
+// Opts InstallerOpts is the relative options that we
 // will need to pass into Run.
-type InstallerOpts struct {
+type Opts struct {
 	NoOp bool
 	Os   *core.System
 }
 
-// Install the packages listed in the
+// Run installs the packages listed in the
 // packages section of the YAML file.
-func (opts *InstallerOpts) Run(c *core.PackageManagerConfig) ([]byte, error) {
+func (opts *Opts) Run(c *core.PackageManagerConfig) ([]byte, error) {
 	// Format our command
 	command, err := c.GetInstallCommand()
 	if err != nil {

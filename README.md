@@ -65,4 +65,4 @@ We welcome contributions to Gasible. If you find a bug or want to request a new 
 Gasible is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Acknowledgements
-Gasible was inspired by other [similar](https://github.com/ansible/ansible) projects and we have used their practices as a reference. We are grateful for the contributions of the open-source community, and we hope that Gasible will be a valuable addition to it.
+Gasible was inspired by other [similar](https://github.com/ansible/ansible) projects, and we have used their practices as a reference. We are grateful for the contributions of the open-source community, and we hope that Gasible will be a valuable addition to it.

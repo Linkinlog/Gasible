@@ -1,4 +1,4 @@
-// commandprocessor is the first logical gate our tool encounters
+// Package commandProcessor is the first logical gate our tool encounters
 package commandProcessor
 
 import (
@@ -11,9 +11,11 @@ import (
 	"github.com/Linkinlog/gasible/internal/core"
 )
 
-// Start the machine, handle which services to set up.
+// InitProcess Start the machine, handle which services to set up.
+//
+//goland:noinspection GoUnreachableCode,GoUnreachableCode
 func InitProcess(conf *core.ConfigModel) error {
-	// Create a waitgroup so we can run all services at once.
+	// Create a waitgroup, so we can run all services at once.
 	var wg sync.WaitGroup
 	errChan := make(chan error, 1)
 	outChan := make(chan string, 1)
@@ -22,7 +24,7 @@ func InitProcess(conf *core.ConfigModel) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			opts := installer.InstallerOpts{
+			opts := installer.Opts{
 				NoOp: conf.GlobalOpts.NoOp,
 				Os: &core.System{
 					Name:   runtime.GOOS,

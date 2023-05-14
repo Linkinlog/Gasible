@@ -1,4 +1,4 @@
-// Systems file
+// Package core Systems file
 //
 // This file contains structs relative to
 // the operating system that we are setting up.
@@ -27,7 +27,7 @@ type System struct {
 	Runner CmdRunner
 }
 
-// Executes the command string, or echo's out the command it would have ran.
+// Exec executes the command string, or echo's out the command that it would have run.
 func (os System) Exec(command string, args ...string) ([]byte, error) {
 	// Set up the command and handle noop
 	execCmd := os.Runner.Command(command, args...)

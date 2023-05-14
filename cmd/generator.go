@@ -17,7 +17,7 @@ var generatorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// TODO generate a config relative to the config in the executable
 		// since we are embedding the config file now.
-		err := yamlParser.CreateDefaults()
+		err := yamlParser.WriteCurrent()
 		if err != nil {
 			panic(err)
 		}

@@ -1,6 +1,6 @@
 package core
 
-// The credentials to the teamviewer account.
+// TVCreds The credentials to the teamviewer account.
 // TODO Find a better way to handle this
 type TVCreds struct {
 	User string `yaml:"user,omitempty"`

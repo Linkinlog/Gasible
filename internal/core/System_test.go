@@ -28,7 +28,10 @@ func TestSystemMock(t *testing.T) {
 	if os.Getenv("RUN_SYSTEM_MOCK") != "1" {
 		return
 	}
-	fmt.Fprint(os.Stdout, "mocking passed")
+	_, err := fmt.Fprint(os.Stdout, "mocking passed")
+	if err != nil {
+		t.Fatal("Failed mocking")
+	}
 	os.Exit(0)
 }
 

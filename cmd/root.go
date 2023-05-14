@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	// Used for flags.
+	// Noop Used for flags.
 	Noop bool
 
 	RootCmd = &cobra.Command{
