@@ -4,10 +4,8 @@ package commandProcessor
 import (
 	"log"
 	"os"
-	"runtime"
 	"sync"
 
-	"github.com/Linkinlog/gasible/cmd/installer"
 	"github.com/Linkinlog/gasible/internal/core"
 )
 
@@ -20,25 +18,6 @@ func InitProcess(conf *core.ConfigModel) error {
 	errChan := make(chan error, 1)
 	outChan := make(chan string, 1)
 
-	if conf.ServicesConfig.Installer {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			opts := installer.Opts{
-				NoOp: conf.GlobalOpts.NoOp,
-				Os: &core.System{
-					Name:   runtime.GOOS,
-					Runner: core.RealRunner{},
-				},
-			}
-			out, err := opts.Run(&conf.PackageManagerConfig)
-			if err != nil {
-				errChan <- err
-			} else if out != nil {
-				outChan <- string(out)
-			}
-		}()
-	}
 	// if conf.ServicesConfig.Ssh {
 	// TODO
 	// }

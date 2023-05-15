@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
@@ -32,6 +33,25 @@ type PackageManager interface {
 	GetCommandOptions() *PackageManagerOpts
 }
 
+// Opts InstallerOpts is the relative options that we
+// will need to pass into Run.
+type InstallerOpts struct {
+	NoOp bool
+	Os   *System
+}
+
+// Run installs the packages listed in the
+// packages section of the YAML file.
+func (opts *InstallerOpts) Run(c *PackageManagerConfig) ([]byte, error) {
+	// Format our command
+	command, err := c.GetInstallCommand()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return opts.Os.Exec(command)
+}
+
 // GetManagerPath Check if the package manager is in $PATH,
 // and if so, return the full path to it.
 func (pkgManagerConf *PackageManagerConfig) GetManagerPath() (string, error) {
@@ -48,6 +68,22 @@ func (pkgManagerConf *PackageManagerConfig) GetManagerPath() (string, error) {
 	//panic("Error: Permission denied.")
 	//}
 	return path, nil
+}
+
+func InstallWithDetectedOS(packages []string) error {
+	conf := GetConfig()
+	installerOpts := InstallerOpts{
+		NoOp: conf.GlobalOpts.NoOp,
+		Os: &System{
+			Name:   runtime.GOOS,
+			Runner: RealRunner{},
+		},
+	}
+	_, err := installerOpts.Run(&conf.PackageManagerConfig)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // GetInstallCommand returns a formatted string to install pkgs.

@@ -34,14 +34,14 @@ func GetConfig() *ConfigModel {
 // NewConfigWithDefaults creates the defaults and write them to *Config.
 func NewConfigWithDefaults() ConfigModel {
 	pkgInstallConf := PackageManagerConfig{}
-	servicesConf := ServicesConfig{}.Default()
-	generalConf := GeneralConfig{}.Default()
+	servicesConf := ServicesConfig{}
+	generalConf := GeneralConfig{}
 	globalOpts := &GlobalOpts{}
 
 	return ConfigModel{
 		*pkgInstallConf.Default(),
-		*servicesConf,
-		*generalConf,
+		*servicesConf.Default(),
+		*generalConf.Default(),
 		*globalOpts,
 	}
 }
