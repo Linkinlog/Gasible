@@ -42,6 +42,8 @@ type InstallerOpts struct {
 
 // Run installs the packages listed in the
 // packages section of the YAML file.
+//
+// Deprecated: Use GenericPackageManager.
 func (opts *InstallerOpts) Run(c *PackageManagerConfig) ([]byte, error) {
 	// Format our command
 	command, err := c.GetInstallCommand()

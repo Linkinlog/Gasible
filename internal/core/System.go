@@ -6,7 +6,6 @@
 package core
 
 import (
-	"log"
 	"os/exec"
 )
 
@@ -31,8 +30,6 @@ type System struct {
 func (os System) Exec(command string, args ...string) ([]byte, error) {
 	// Set up the command and handle noop
 	execCmd := os.Runner.Command(command, args...)
-	execCmd.Args = append(execCmd.Args, command)
-	log.Print("Beginning package installation! Please wait...")
 	out, err := execCmd.CombinedOutput()
 	if err != nil {
 		return []byte{}, err
