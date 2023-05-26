@@ -17,6 +17,10 @@ type CmdRunner interface {
 type SudoRunner struct{}
 
 func (r SudoRunner) Command(name string, arg ...string) *exec.Cmd {
+	_, err := exec.LookPath(name)
+	if err != nil {
+		return nil
+	}
 	arg = append([]string{"sudo", name}, arg...)
 	stringArg := strings.Join(arg, " ")
 	return exec.Command("/bin/sh", "-c", stringArg)
@@ -31,10 +35,6 @@ type System struct {
 
 // Exec executes the command string.
 func (os System) Exec(command string, args []string) ([]byte, error) {
-	_, err := exec.LookPath(command)
-	if err != nil {
-		return []byte{}, err
-	}
 	execCmd := os.Runner.Command(command, args...)
 	out, err := execCmd.CombinedOutput()
 	if err != nil {

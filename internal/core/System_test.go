@@ -46,7 +46,7 @@ func TestSystemExec(t *testing.T) {
 		"TestInstallerWithDefaults",
 	}
 	t.Run(testCase.Name, func(t *testing.T) {
-		out, err := testCase.system.Exec("")
+		out, err := testCase.system.Exec("", []string{})
 		expectedRes := "mocking passed"
 		if err != nil {
 			t.Fatalf("Failed installer test, err: %s", err.Error())
