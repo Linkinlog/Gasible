@@ -7,16 +7,19 @@ package core
 
 import (
 	"os/exec"
+	"strings"
 )
 
 type CmdRunner interface {
 	Command(name string, arg ...string) *exec.Cmd
 }
 
-type RealRunner struct{}
+type SudoRunner struct{}
 
-func (r RealRunner) Command(name string, arg ...string) *exec.Cmd {
-	return exec.Command(name, arg...)
+func (r SudoRunner) Command(name string, arg ...string) *exec.Cmd {
+	arg = append([]string{"sudo", name}, arg...)
+	stringArg := strings.Join(arg, " ")
+	return exec.Command("/bin/sh", "-c", stringArg)
 }
 
 // System contains the name of the operating system and
@@ -26,9 +29,12 @@ type System struct {
 	Runner CmdRunner
 }
 
-// Exec executes the command string, or echo's out the command that it would have run.
-func (os System) Exec(command string, args ...string) ([]byte, error) {
-	// Set up the command and handle noop
+// Exec executes the command string.
+func (os System) Exec(command string, args []string) ([]byte, error) {
+	_, err := exec.LookPath(command)
+	if err != nil {
+		return []byte{}, err
+	}
 	execCmd := os.Runner.Command(command, args...)
 	out, err := execCmd.CombinedOutput()
 	if err != nil {

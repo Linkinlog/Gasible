@@ -1,22 +1,14 @@
 package modules
 
 import (
-	"runtime"
-	"strings"
-
+	"fmt"
 	"github.com/Linkinlog/gasible/internal/core"
+	"log"
+	"runtime"
 )
 
 type GenericPackageManager struct {
 	Name string
-}
-
-// PackageManagerConfig holds all fields
-// relative to the package installer service.
-type PackageManagerConfig struct {
-	Manager       string         `yaml:"pkg-manager-command,omitempty"`
-	Packages      []string       `yaml:"packages"`
-	ChosenManager PackageManager `yaml:"-"`
 }
 
 type PackageManager interface {
@@ -52,24 +44,35 @@ func (packageMan *GenericPackageManager) Update() error {
 func UpdatePackages(packages []string) (err error) {
 	sys := core.System{
 		Name:   runtime.GOOS,
-		Runner: core.RealRunner{},
+		Runner: core.SudoRunner{},
 	}
 
 	packageMgr := determinePackageMgr(sys.Name, core.CurrentConfig.Manager)
-	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().UpdateArg)
-	_, err = sys.Exec(formattedCommand, packages...)
+	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().UpgradeArg)
+	packagesAndArgs := append(formattedCommand, packages...)
+	fmt.Printf("Attempting to use %s to upgrade packages: %s...\n", packageMgr.getExecutable(), packages)
+
+	out, err := sys.Exec(packageMgr.getExecutable(), packagesAndArgs)
+	if err == nil {
+		log.Printf("Package upgrade finished.\n Output: %s\n", string(out))
+	}
 	return
 }
 
 func InstallPackages(packages []string) (err error) {
 	sys := core.System{
 		Name:   runtime.GOOS,
-		Runner: core.RealRunner{},
+		Runner: core.SudoRunner{},
 	}
 
 	packageMgr := determinePackageMgr(sys.Name, core.CurrentConfig.Manager)
 	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().InstallArg)
-	_, err = sys.Exec(formattedCommand, packages...)
+	packagesAndArgs := append(formattedCommand, packages...)
+	log.Printf("Attempting to use %s to install packages: %s...\n", packageMgr.getExecutable(), packages)
+	out, err := sys.Exec(packageMgr.getExecutable(), packagesAndArgs)
+	if err == nil {
+		log.Printf("Package installation finished.\n Output: %s\n", string(out))
+	}
 	return
 }
 
@@ -85,13 +88,12 @@ func determinePackageMgr(os string, manager string) (packageMgr PackageManager) 
 // formatCommand
 // Should format the shell command
 // with the proper operation (install, update, etc).
-func formatCommand(packageMgr PackageManager, operation string) string {
-	return strings.Join([]string{
-		string(packageMgr.getExecutable()),
+func formatCommand(packageMgr PackageManager, operation string) []string {
+	return []string{
 		operation,
 		packageMgr.getCommandOptions().AutoConfirmOpt,
 		packageMgr.getCommandOptions().QuietOpt,
-	}, " ")
+	}
 }
 
 // packageManagerMap
