@@ -1,5 +1,5 @@
 MAIN := main.go
-BINARY := gas
+BINARY := gasible
 PWD := $(shell pwd)
 
 all: clean

@@ -15,7 +15,7 @@ func init() {
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "gas",
+		Use:   "gasible",
 		Short: "A lightweight configurator for local development environments",
 		Long: `Gasible is a tool that can be used to automate the installation of any tool from your favorite OS/Package manager,
         it also provides tooling for setting up bare git repos that can be useful with local configs. Read more in the README.md of this package`,
