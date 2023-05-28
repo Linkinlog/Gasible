@@ -2,6 +2,7 @@ MAIN := main.go
 BINARY := gas
 PWD := $(shell pwd)
 
+all: clean
 all: $(BINARY)
 
 $(BINARY): $(MAIN)

@@ -89,15 +89,24 @@ func (packageMan *GenericPackageManager) ParseSettings(rawSettings map[string]in
 // Methods that may be useful for other packages
 
 func UpdatePackages(packages []string) (err error) {
-	return managePackages(packages, "update")
+	if len(packages) > 0 {
+		return managePackages(packages, "update")
+	}
+	return
 }
 
 func InstallPackages(packages []string) (err error) {
-	return managePackages(packages, "install")
+	if len(packages) > 0 {
+		return managePackages(packages, "install")
+	}
+	return
 }
 
 func UninstallPackages(packages []string) (err error) {
-	return managePackages(packages, "uninstall")
+	if len(packages) > 0 {
+		return managePackages(packages, "uninstall")
+	}
+	return
 }
 
 // Helper functions
@@ -110,10 +119,13 @@ func managePackages(packages []string, operation string) (err error) {
 
 	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
 	if err != nil || moduleSettings == nil {
-		log.Fatal("Failed to get GenericPackageManager module settings.")
+		return errors.New("failed to get GenericPackageManager module settings")
 	}
 
-	packageMgr := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
+	packageMgr, err := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
+	if err != nil {
+		return err
+	}
 
 	// Get the appropriate command argument based on the operation type.
 	var commandArg string
@@ -138,13 +150,20 @@ func managePackages(packages []string, operation string) (err error) {
 	return
 }
 
-func determinePackageMgr(os string, manager string) (packageMgr PackageManager) {
+func determinePackageMgr(os string, manager string) (packageMgr PackageManager, err error) {
+	var ok bool
 	if os == "darwin" {
 		// Failsafe as we only support brew on Mac
 		// TODO maybe?
-		return packageManagerMap["brew"]
+		packageMgr, ok = packageManagerMap["brew"]
+	} else {
+		packageMgr, ok = packageManagerMap[manager]
 	}
-	return packageManagerMap[manager]
+	if ok {
+		return packageMgr, nil
+	} else {
+		return nil, errors.New("package manager not found")
+	}
 }
 
 // formatCommand
