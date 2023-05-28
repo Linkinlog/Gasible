@@ -10,7 +10,6 @@
 package main
 
 import (
-	_ "embed"
 	"github.com/Linkinlog/gasible/cmd"
 	"github.com/Linkinlog/gasible/internal/core"
 	_ "github.com/Linkinlog/gasible/modules"
