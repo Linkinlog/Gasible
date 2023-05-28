@@ -5,19 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func init() {
-	RootCmd.AddCommand(updateCmd)
-}
-
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update packages and configurations.",
 	Long: `This will run the update command against all
     modules.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := core.ModuleRegistry.RunUpdate()
-		if err != nil {
-			panic(err)
-		}
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return core.ModuleRegistry.RunUpdate()
 	},
 }

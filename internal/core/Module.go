@@ -20,6 +20,8 @@ type Module interface {
 	Update() error
 }
 
+// ModuleConfig
+// General items we may need to track for each module.
 type ModuleConfig struct {
 	Priority int
 	Enabled  bool
@@ -101,10 +103,10 @@ func (mr *Registry) RunTeardown() (err error) {
 }
 
 // setCurrent
-// Sets the config for each module in the repository from the settingsYAML.
+// Sets the Config for each module in the repository from the settingsYAML.
 func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	// Unmarshal the YAML data into the ModuleSettings map.
-	err := yaml.Unmarshal(settingsYAML, &moduleSettings)
+	err := yaml.Unmarshal(settingsYAML, &moduleSettingsMap)
 	if err != nil {
 		return err
 	}
@@ -112,7 +114,7 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	// For each module in the registry, retrieve its settings from
 	// the ModuleSettings map and set them.
 	for moduleName, module := range mr.Modules {
-		if rawSettings, ok := moduleSettings[moduleName]; ok {
+		if rawSettings, ok := moduleSettingsMap[moduleName]; ok {
 			err = module.ParseSettings(rawSettings.(map[string]interface{}))
 			if err != nil {
 				return err

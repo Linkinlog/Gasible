@@ -6,7 +6,6 @@ import (
 )
 
 func init() {
-	RootCmd.AddCommand(config)
 	config.AddCommand(writeCurrent)
 }
 
@@ -19,11 +18,8 @@ var writeCurrent = &cobra.Command{
 	Use:   "generate",
 	Short: "Write the current config to ./config.yml.",
 	Long: `This will create a default YAML file using the 
-  sensible defaults we provided.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		err := core.CurrentState.Config.WriteConfigToFile()
-		if err != nil {
-			panic(err)
-		}
+  defaults provided by each module.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return core.CurrentState.Config.WriteConfigToFile()
 	},
 }

@@ -43,7 +43,7 @@ func TestRegisterAndGetNewModule(t *testing.T) {
 
 	// Confirm there is nothing in the registry
 	_, err := moduleRegistry.Get(testCase.TestName)
-	if err.Error() != core.ModuleNotFoundError {
+	if err != nil && err.Error() != core.ModuleNotFoundError {
 		t.Fatalf("Expected error %s not found. Found %s", core.ModuleNotFoundError, err)
 	}
 	// Register

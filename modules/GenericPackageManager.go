@@ -10,18 +10,18 @@ import (
 
 // Variable declaration
 
-type GenericPackageManager struct {
+type genericPackageManager struct {
 	Priority int
 	Enabled  bool
-	Settings PackageManagerConfig
+	Settings packageManagerConfig
 }
 
-type PackageManagerConfig struct {
+type packageManagerConfig struct {
 	Manager  string   `yaml:"pkg-manager"`
 	Packages []string `yaml:"packages"`
 }
 
-type PackageManager interface {
+type packageManager interface {
 	getExecutable() string
 	getSubCommands() *packageManagerArgs
 	getCommandOptions() *packageManagerOpts
@@ -42,28 +42,28 @@ type packageManagerOpts struct {
 // init
 // This should really just handle registering the module in the registry.
 func init() {
-	core.ModuleRegistry.Register("GenericPackageManager", &GenericPackageManager{
+	core.ModuleRegistry.Register("GenericPackageManager", &genericPackageManager{
 		Priority: 0,
 		Enabled:  true,
-		Settings: PackageManagerConfig{},
+		Settings: packageManagerConfig{},
 	})
 }
 
 // Interface methods
 
-func (packageMan *GenericPackageManager) Setup() error {
+func (packageMan *genericPackageManager) Setup() error {
 	return InstallPackages(packageMan.Settings.Packages)
 }
 
-func (packageMan *GenericPackageManager) TearDown() error {
+func (packageMan *genericPackageManager) TearDown() error {
 	return UninstallPackages(packageMan.Settings.Packages)
 }
 
-func (packageMan *GenericPackageManager) Update() error {
+func (packageMan *genericPackageManager) Update() error {
 	return UpdatePackages(packageMan.Settings.Packages)
 }
 
-func (packageMan *GenericPackageManager) Config() core.ModuleConfig {
+func (packageMan *genericPackageManager) Config() core.ModuleConfig {
 	return core.ModuleConfig{
 		Priority: packageMan.Priority,
 		Enabled:  packageMan.Enabled,
@@ -71,13 +71,13 @@ func (packageMan *GenericPackageManager) Config() core.ModuleConfig {
 	}
 }
 
-func (packageMan *GenericPackageManager) ParseSettings(rawSettings map[string]interface{}) (err error) {
+func (packageMan *genericPackageManager) ParseSettings(rawSettings map[string]interface{}) (err error) {
 	settingsBytes, err := yaml.Marshal(rawSettings)
 	if err != nil {
 		return
 	}
 
-	var settings PackageManagerConfig
+	var settings packageManagerConfig
 	err = yaml.Unmarshal(settingsBytes, &settings)
 	if err != nil {
 		return
@@ -122,7 +122,7 @@ func managePackages(packages []string, operation string) (err error) {
 		return errors.New("failed to get GenericPackageManager module settings")
 	}
 
-	packageMgr, err := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
+	packageMgr, err := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(packageManagerConfig).Manager)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func managePackages(packages []string, operation string) (err error) {
 	return
 }
 
-func determinePackageMgr(os string, manager string) (packageMgr PackageManager, err error) {
+func determinePackageMgr(os string, manager string) (packageMgr packageManager, err error) {
 	var ok bool
 	if os == "darwin" {
 		// Failsafe as we only support brew on Mac
@@ -169,7 +169,7 @@ func determinePackageMgr(os string, manager string) (packageMgr PackageManager, 
 // formatCommand
 // Should format the shell command
 // with the proper operation (install, update, etc).
-func formatCommand(packageMgr PackageManager, operation string) []string {
+func formatCommand(packageMgr packageManager, operation string) []string {
 	return []string{
 		operation,
 		packageMgr.getCommandOptions().AutoConfirmOpt,
@@ -178,8 +178,8 @@ func formatCommand(packageMgr PackageManager, operation string) []string {
 }
 
 // packageManagerMap
-// Give it a string, get a PackageManager.
-var packageManagerMap = map[string]PackageManager{
+// Give it a string, get a packageManager.
+var packageManagerMap = map[string]packageManager{
 	"apt":      &aptitude{},
 	"apt-get":  &aptitude{},
 	"aptitude": &aptitude{},
@@ -221,7 +221,7 @@ func (apt *aptitude) getSubCommands() *packageManagerArgs {
 	return &packageManagerArgs{
 		InstallArg:   "install",
 		UninstallArg: "remove",
-		UpdateArg:    "update",
+		UpdateArg:    "install",
 		UpgradeArg:   "upgrade",
 	}
 }
