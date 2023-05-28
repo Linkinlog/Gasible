@@ -14,7 +14,7 @@ var setupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "Run the setup for all modules.",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := core.ModuleRegistry.RunSetup()
+		err := core.CurrentState.Config.ModuleRegistry.RunSetup()
 		if err != nil {
 			log.Fatal(err)
 		}

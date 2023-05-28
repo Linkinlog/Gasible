@@ -8,7 +8,14 @@ import (
 )
 
 type GenericPackageManager struct {
-	Name string
+	Priority int
+	Enabled  bool
+	Settings PackageManagerConfig
+}
+
+type PackageManagerConfig struct {
+	Manager  string   `yaml:"pkg-manager"`
+	Packages []string `yaml:"packages"`
 }
 
 type PackageManager interface {
@@ -30,15 +37,41 @@ type packageManagerOpts struct {
 }
 
 func init() {
-	core.ModuleRegistry.Register("GenericPackageManager", &GenericPackageManager{})
+	core.ModuleRegistry.Register("GenericPackageManager", &GenericPackageManager{
+		Priority: 0,
+		Enabled:  true,
+		Settings: PackageManagerConfig{},
+	})
 }
 
 func (packageMan *GenericPackageManager) Setup() error {
-	return InstallPackages(core.CurrentConfig.Packages)
+	return InstallPackages(packageMan.Settings.Packages)
+}
+
+func (packageMan *GenericPackageManager) TearDown() error {
+	return nil
 }
 
 func (packageMan *GenericPackageManager) Update() error {
-	return UpdatePackages(core.CurrentConfig.Packages)
+	return UpdatePackages(packageMan.Settings.Packages)
+}
+
+func (packageMan *GenericPackageManager) Config() core.ModuleConfig {
+	return core.ModuleConfig{
+		Priority: packageMan.Priority,
+		Enabled:  packageMan.Enabled,
+		Settings: packageMan.Settings,
+	}
+}
+
+func (packageMan *GenericPackageManager) SetConfig(config *core.ModuleConfig) {
+	if settings, ok := config.Settings.(PackageManagerConfig); ok {
+		packageMan.Settings = settings
+		packageMan.Priority = config.Priority
+		packageMan.Enabled = config.Enabled
+	} else {
+		log.Fatalf("Interface %v not found. Found %v", PackageManagerConfig{}, settings)
+	}
 }
 
 func UpdatePackages(packages []string) (err error) {
@@ -47,7 +80,11 @@ func UpdatePackages(packages []string) (err error) {
 		Runner: core.SudoRunner{},
 	}
 
-	packageMgr := determinePackageMgr(sys.Name, core.CurrentConfig.Manager)
+	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
+	if err == nil || moduleSettings == nil {
+		log.Fatal("Failed")
+	}
+	packageMgr := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
 	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().UpgradeArg)
 	packagesAndArgs := append(formattedCommand, packages...)
 	fmt.Printf("Attempting to use %s to upgrade packages: %s...\n", packageMgr.getExecutable(), packages)
@@ -65,7 +102,11 @@ func InstallPackages(packages []string) (err error) {
 		Runner: core.SudoRunner{},
 	}
 
-	packageMgr := determinePackageMgr(sys.Name, core.CurrentConfig.Manager)
+	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
+	if err == nil || moduleSettings == nil {
+		log.Fatal("Failed")
+	}
+	packageMgr := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
 	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().InstallArg)
 	packagesAndArgs := append(formattedCommand, packages...)
 	log.Printf("Attempting to use %s to install packages: %s...\n", packageMgr.getExecutable(), packages)
@@ -75,6 +116,8 @@ func InstallPackages(packages []string) (err error) {
 	}
 	return
 }
+
+// Helper functions
 
 func determinePackageMgr(os string, manager string) (packageMgr PackageManager) {
 	if os == "darwin" {

@@ -1,72 +1,83 @@
 package core
 
 import (
-	"errors"
-
 	"gopkg.in/yaml.v3"
+	"os"
+	"path/filepath"
 )
 
-// ConfigModel The entire config YAML.
-type ConfigModel struct {
-	PackageManagerConfig `yaml:",inline,omitempty"`
-	ServicesConfig       `yaml:",inline,omitempty"`
-	GeneralConfig        `yaml:",inline,omitempty"`
-	GlobalOpts           `yaml:"-"`
+var CurrentState = CoreConfig{
+	Config: Config{ModuleRegistry: ModuleRegistry},
 }
 
-// GlobalOpts Options to embed on our config that
-// we may need throughout execution.
-type GlobalOpts struct {
-	FilePath string
-	NoOp     bool
+// moduleSettings is a map holding settings for each module.
+var moduleSettings = make(map[string]interface{})
+
+// CoreConfig The state of the app.
+type CoreConfig struct {
+	Config
 }
 
-var CurrentConfig = ConfigModel{}
-
-func SetConfig(model *ConfigModel) {
-	CurrentConfig = *model
+// Config The entire config YAML.
+type Config struct {
+	ModuleRegistry *Registry
 }
 
-func GetConfig() *ConfigModel {
-	return &CurrentConfig
-}
-
-// NewConfigWithDefaults creates the defaults and write them to *Config.
-func NewConfigWithDefaults() ConfigModel {
-	pkgInstallConf := PackageManagerConfig{}
-	servicesConf := ServicesConfig{}
-	generalConf := GeneralConfig{}
-	globalOpts := &GlobalOpts{}
-
-	return ConfigModel{
-		*pkgInstallConf.Default(),
-		*servicesConf.Default(),
-		*generalConf.Default(),
-		*globalOpts,
+// WriteConfigToFile will generate a YAML file
+// using the defaults we outline.
+func WriteConfigToFile(model *Config) (err error) {
+	// For each module in the registry,
+	// retrieve its settings and store them in the ModuleSettings map.
+	for moduleName, module := range CurrentState.Config.ModuleRegistry.Modules {
+		moduleSettings[moduleName] = module.Config().Settings
 	}
-}
 
-// NewConfigFromFile creates the defaults and write them to *Config.
-func NewConfigFromFile(configFile string) *ConfigModel {
-	conf := &ConfigModel{
-		PackageManagerConfig{},
-		ServicesConfig{},
-		GeneralConfig{},
-		GlobalOpts{},
-	}
-	if err := conf.LoadFromFile(configFile); err != nil {
-		// TODO not a fan of panicking but it'll work for now
-		panic(err)
-	}
-	return conf
-}
-
-// LoadFromFile grabs the config from the YAML and write it to the given struct.
-func (conf *ConfigModel) LoadFromFile(configFile string) error {
-	err := yaml.Unmarshal([]byte(configFile), &conf)
+	// Marshal the ModuleSettings map to YAML.
+	settingsYAML, err := yaml.Marshal(moduleSettings)
 	if err != nil {
-		return errors.New("could not Unmarshal Config file")
+		return err
+	}
+
+	filePath, err := getConfigPath()
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(filePath, settingsYAML, 0644)
+	if err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func ReadConfigFromFile(filePath string) (err error) {
+	var fileContents []byte
+	if filePath == "" {
+		filePath, err = getConfigPath()
+	}
+
+	fileContents, err = os.ReadFile(filePath)
+
+	return CurrentState.Config.ModuleRegistry.setCurrent(fileContents)
+}
+
+func getConfigPath() (string, error) {
+	// Find home directory.
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	confDir := filepath.Join(homeDir, ".gas")
+	// Append the config file path to the home directory path
+	_, err = os.Stat(confDir)
+
+	if os.IsNotExist(err) {
+		errDir := os.MkdirAll(confDir, 0755)
+		if errDir != nil {
+			return "", err
+		}
+	}
+	return filepath.Join(homeDir, ".gas/config.yml"), nil
 }

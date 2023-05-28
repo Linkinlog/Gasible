@@ -12,7 +12,7 @@ import (
 // InitProcess Start the machine, handle which services to set up.
 //
 //goland:noinspection GoUnreachableCode,GoUnreachableCode
-func InitProcess(conf *core.ConfigModel) error {
+func InitProcess(conf *core.CoreConfig) error {
 	// Create a waitgroup, so we can run all services at once.
 	var wg sync.WaitGroup
 	errChan := make(chan error, 1)

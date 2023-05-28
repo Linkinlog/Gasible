@@ -15,13 +15,8 @@ var initializer = &cobra.Command{
 	Short: "Initialize standard setup",
 	Long:  `This will read from the config file and set up the system accordingly.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		filePath, _ := cmd.Flags().GetString("config")
-		noop, _ := cmd.Flags().GetBool("noop")
 		// Create a config struct and fill it from the config file.
-		conf := core.ConfigModel{}
-		// Overwrite GlobalOpts with our defaults
-		conf.GlobalOpts.FilePath = filePath
-		conf.GlobalOpts.NoOp = noop
+		conf := core.CoreConfig{}
 		err := commandProcessor.InitProcess(&conf)
 		if err != nil {
 			return err

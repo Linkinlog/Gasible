@@ -5,6 +5,8 @@ package core
 
 import (
 	"errors"
+	"gopkg.in/yaml.v3"
+	"log"
 )
 
 const ModuleNotFoundError string = "no module found"
@@ -12,15 +14,24 @@ const ModuleNotFoundError string = "no module found"
 // Module
 // Any struct that implements these methods can be considered a module.
 type Module interface {
+	SetConfig(*ModuleConfig)
+	Config() ModuleConfig
 	Setup() error
+	TearDown() error
 	Update() error
 }
 
+type ModuleConfig struct {
+	Priority int
+	Enabled  bool
+	Settings interface{}
+}
+
 // Registry
-// This registry contains modules.
-// The modules take a string and map it to a Module.
+// This registry contains Modules.
+// The Modules take a string and map it to a Module.
 type Registry struct {
-	modules map[string]Module
+	Modules map[string]Module
 }
 
 // ModuleRegistry
@@ -38,7 +49,7 @@ func NewModuleRegistry() *Registry {
 // Get
 // This gets a module from an existing registry.
 func (mr *Registry) Get(mod string) (Module, error) {
-	found := mr.modules[mod]
+	found := mr.Modules[mod]
 	if found != nil {
 		return found, nil
 	}
@@ -48,15 +59,16 @@ func (mr *Registry) Get(mod string) (Module, error) {
 // Register
 // This adds a new module to an existing registry.
 func (mr *Registry) Register(name string, mod Module) {
-	mr.modules[name] = mod
+	mr.Modules[name] = mod
 }
 
 // RunSetup
-// Runs the Setup method on each Registry.modules
+// Runs the Setup method on each Registry.Modules
 func (mr *Registry) RunSetup() (err error) {
-	// TODO handle priority of modules
-	for _, module := range mr.modules {
-		err = module.Setup()
+	err = ReadConfigFromFile("")
+	// TODO handle priority of ModuleRegistry
+	for _, module := range mr.Modules {
+		log.Println(module.Config())
 		if err != nil {
 			return
 		}
@@ -65,14 +77,36 @@ func (mr *Registry) RunSetup() (err error) {
 }
 
 // RunUpdate
-// Runs the Setup method on each Registry.modules
+// Runs the Setup method on each Registry.Modules
 func (mr *Registry) RunUpdate() (err error) {
-	// TODO handle priority of modules
-	for _, module := range mr.modules {
+	// TODO handle priority of ModuleRegistry
+	for _, module := range mr.Modules {
 		err = module.Update()
 		if err != nil {
 			return
 		}
 	}
 	return
+}
+
+// setCurrent
+// Sets the config for each module in the repository from the settingsYAML.
+func (mr *Registry) setCurrent(settingsYAML []byte) error {
+	// Unmarshal the YAML data into the ModuleSettings map.
+	err := yaml.Unmarshal(settingsYAML, &moduleSettings)
+	if err != nil {
+		return err
+	}
+
+	// For each module in the registry, retrieve its settings from
+	// the ModuleSettings map and set them.
+	for moduleName, module := range mr.Modules {
+		if settings, ok := moduleSettings[moduleName]; ok {
+			info := module.Config()
+			info.Settings = settings
+			module.SetConfig(&info)
+		}
+	}
+
+	return nil
 }
