@@ -14,6 +14,8 @@ var CurrentState = CoreConfig{
 var moduleSettings = make(map[string]interface{})
 
 // CoreConfig The state of the app.
+//
+//goland:noinspection GoNameStartsWithPackageName
 type CoreConfig struct {
 	Config
 }
@@ -25,10 +27,10 @@ type Config struct {
 
 // WriteConfigToFile will generate a YAML file
 // using the defaults we outline.
-func WriteConfigToFile(model *Config) (err error) {
+func (conf *Config) WriteConfigToFile() (err error) {
 	// For each module in the registry,
 	// retrieve its settings and store them in the ModuleSettings map.
-	for moduleName, module := range CurrentState.Config.ModuleRegistry.Modules {
+	for moduleName, module := range conf.ModuleRegistry.Modules {
 		moduleSettings[moduleName] = module.Config().Settings
 	}
 
@@ -56,8 +58,14 @@ func ReadConfigFromFile(filePath string) (err error) {
 	if filePath == "" {
 		filePath, err = getConfigPath()
 	}
+	if err != nil {
+		return err
+	}
 
 	fileContents, err = os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
 
 	return CurrentState.Config.ModuleRegistry.setCurrent(fileContents)
 }
@@ -70,6 +78,7 @@ func getConfigPath() (string, error) {
 	}
 
 	confDir := filepath.Join(homeDir, ".gas")
+	confFile := filepath.Join(confDir, "config.yml")
 	// Append the config file path to the home directory path
 	_, err = os.Stat(confDir)
 
@@ -79,5 +88,16 @@ func getConfigPath() (string, error) {
 			return "", err
 		}
 	}
-	return filepath.Join(homeDir, ".gas/config.yml"), nil
+
+	// Append the config file path to the home directory path
+	_, err = os.Stat(confFile)
+
+	if os.IsNotExist(err) {
+		_, errDir := os.Create(confFile)
+		if errDir != nil {
+			return "", err
+		}
+	}
+
+	return confFile, nil
 }

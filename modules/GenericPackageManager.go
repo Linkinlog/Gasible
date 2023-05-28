@@ -1,11 +1,14 @@
 package modules
 
 import (
-	"fmt"
+	"errors"
 	"github.com/Linkinlog/gasible/internal/core"
+	"gopkg.in/yaml.v3"
 	"log"
 	"runtime"
 )
+
+// Variable declaration
 
 type GenericPackageManager struct {
 	Priority int
@@ -25,10 +28,10 @@ type PackageManager interface {
 }
 
 type packageManagerArgs struct {
-	InstallArg string
-	RemoveArg  string
-	UpdateArg  string
-	UpgradeArg string
+	InstallArg   string
+	UninstallArg string
+	UpdateArg    string
+	UpgradeArg   string
 }
 
 type packageManagerOpts struct {
@@ -36,6 +39,8 @@ type packageManagerOpts struct {
 	QuietOpt       string
 }
 
+// init
+// This should really just handle registering the module in the registry.
 func init() {
 	core.ModuleRegistry.Register("GenericPackageManager", &GenericPackageManager{
 		Priority: 0,
@@ -44,12 +49,14 @@ func init() {
 	})
 }
 
+// Interface methods
+
 func (packageMan *GenericPackageManager) Setup() error {
 	return InstallPackages(packageMan.Settings.Packages)
 }
 
 func (packageMan *GenericPackageManager) TearDown() error {
-	return nil
+	return UninstallPackages(packageMan.Settings.Packages)
 }
 
 func (packageMan *GenericPackageManager) Update() error {
@@ -64,60 +71,72 @@ func (packageMan *GenericPackageManager) Config() core.ModuleConfig {
 	}
 }
 
-func (packageMan *GenericPackageManager) SetConfig(config *core.ModuleConfig) {
-	if settings, ok := config.Settings.(PackageManagerConfig); ok {
-		packageMan.Settings = settings
-		packageMan.Priority = config.Priority
-		packageMan.Enabled = config.Enabled
-	} else {
-		log.Fatalf("Interface %v not found. Found %v", PackageManagerConfig{}, settings)
+func (packageMan *GenericPackageManager) ParseSettings(rawSettings map[string]interface{}) (err error) {
+	settingsBytes, err := yaml.Marshal(rawSettings)
+	if err != nil {
+		return
 	}
+
+	var settings PackageManagerConfig
+	err = yaml.Unmarshal(settingsBytes, &settings)
+	if err != nil {
+		return
+	}
+	packageMan.Settings = settings
+	return nil
 }
 
+// Methods that may be useful for other packages
+
 func UpdatePackages(packages []string) (err error) {
-	sys := core.System{
-		Name:   runtime.GOOS,
-		Runner: core.SudoRunner{},
-	}
-
-	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
-	if err == nil || moduleSettings == nil {
-		log.Fatal("Failed")
-	}
-	packageMgr := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
-	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().UpgradeArg)
-	packagesAndArgs := append(formattedCommand, packages...)
-	fmt.Printf("Attempting to use %s to upgrade packages: %s...\n", packageMgr.getExecutable(), packages)
-
-	out, err := sys.Exec(packageMgr.getExecutable(), packagesAndArgs)
-	if err == nil {
-		log.Printf("Package upgrade finished.\n Output: %s\n", string(out))
-	}
-	return
+	return managePackages(packages, "update")
 }
 
 func InstallPackages(packages []string) (err error) {
+	return managePackages(packages, "install")
+}
+
+func UninstallPackages(packages []string) (err error) {
+	return managePackages(packages, "uninstall")
+}
+
+// Helper functions
+
+func managePackages(packages []string, operation string) (err error) {
 	sys := core.System{
 		Name:   runtime.GOOS,
 		Runner: core.SudoRunner{},
 	}
 
 	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
-	if err == nil || moduleSettings == nil {
-		log.Fatal("Failed")
+	if err != nil || moduleSettings == nil {
+		log.Fatal("Failed to get GenericPackageManager module settings.")
 	}
+
 	packageMgr := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
-	formattedCommand := formatCommand(packageMgr, packageMgr.getSubCommands().InstallArg)
-	packagesAndArgs := append(formattedCommand, packages...)
-	log.Printf("Attempting to use %s to install packages: %s...\n", packageMgr.getExecutable(), packages)
-	out, err := sys.Exec(packageMgr.getExecutable(), packagesAndArgs)
-	if err == nil {
-		log.Printf("Package installation finished.\n Output: %s\n", string(out))
+
+	// Get the appropriate command argument based on the operation type.
+	var commandArg string
+	switch operation {
+	case "install":
+		commandArg = packageMgr.getSubCommands().InstallArg
+	case "uninstall":
+		commandArg = packageMgr.getSubCommands().UninstallArg
+	case "update":
+		commandArg = packageMgr.getSubCommands().UpdateArg
 	}
+
+	formattedCommand := formatCommand(packageMgr, commandArg)
+	packagesAndArgs := append(formattedCommand, packages...)
+	log.Printf("Attempting to use %s to %s packages: %s...\n", packageMgr.getExecutable(), operation, packages)
+
+	out, err := sys.Exec(packageMgr.getExecutable(), packagesAndArgs)
+	if err != nil {
+		return errors.Join(err, errors.New(string(out)))
+	}
+	log.Printf("Package %s finished.\n Output: %s\n", operation, string(out))
 	return
 }
-
-// Helper functions
 
 func determinePackageMgr(os string, manager string) (packageMgr PackageManager) {
 	if os == "darwin" {
@@ -154,14 +173,14 @@ var packageManagerMap = map[string]PackageManager{
 type brew struct{}
 
 func (brew *brew) getExecutable() string {
-	return string("brew")
+	return "brew"
 }
 func (brew *brew) getSubCommands() *packageManagerArgs {
 	return &packageManagerArgs{
-		InstallArg: "install",
-		RemoveArg:  "uninstall",
-		UpdateArg:  "update",
-		UpgradeArg: "upgrade",
+		InstallArg:   "install",
+		UninstallArg: "uninstall",
+		UpdateArg:    "update",
+		UpgradeArg:   "upgrade",
 	}
 }
 
@@ -176,15 +195,15 @@ func (brew *brew) getCommandOptions() *packageManagerOpts {
 type aptitude struct{}
 
 func (apt *aptitude) getExecutable() string {
-	return string("apt-get")
+	return "apt-get"
 }
 
 func (apt *aptitude) getSubCommands() *packageManagerArgs {
 	return &packageManagerArgs{
-		InstallArg: "install",
-		RemoveArg:  "remove",
-		UpdateArg:  "update",
-		UpgradeArg: "upgrade",
+		InstallArg:   "install",
+		UninstallArg: "remove",
+		UpdateArg:    "update",
+		UpgradeArg:   "upgrade",
 	}
 }
 

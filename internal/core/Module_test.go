@@ -9,6 +9,18 @@ import (
 // Test that we can make a new module and register it
 type MockModule struct{}
 
+func (mock MockModule) ParseSettings(_ map[string]interface{}) error {
+	return nil
+}
+
+func (mock MockModule) Config() core.ModuleConfig {
+	return core.ModuleConfig{}
+}
+
+func (mock MockModule) TearDown() error {
+	return nil
+}
+
 func (mock MockModule) Setup() error {
 	return nil
 }

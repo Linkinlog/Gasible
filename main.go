@@ -12,12 +12,17 @@ package main
 import (
 	_ "embed"
 	"github.com/Linkinlog/gasible/cmd"
+	"github.com/Linkinlog/gasible/internal/core"
 	_ "github.com/Linkinlog/gasible/modules"
 )
 
 // main starts everything off, now handled by Cobra.
 func main() {
-	err := cmd.Execute()
+	err := core.ReadConfigFromFile("")
+	if err != nil {
+		panic(err)
+	}
+	err = cmd.Execute()
 	if err != nil {
 		panic(err)
 	}

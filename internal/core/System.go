@@ -36,9 +36,5 @@ type System struct {
 // Exec executes the command string.
 func (os System) Exec(command string, args []string) ([]byte, error) {
 	execCmd := os.Runner.Command(command, args...)
-	out, err := execCmd.CombinedOutput()
-	if err != nil {
-		return []byte{}, err
-	}
-	return out, nil
+	return execCmd.CombinedOutput()
 }

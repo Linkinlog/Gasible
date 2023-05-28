@@ -21,7 +21,7 @@ var writeCurrent = &cobra.Command{
 	Long: `This will create a default YAML file using the 
   sensible defaults we provided.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		err := core.WriteConfigToFile(&core.CurrentState.Config)
+		err := core.CurrentState.Config.WriteConfigToFile()
 		if err != nil {
 			panic(err)
 		}

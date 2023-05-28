@@ -6,7 +6,6 @@ package core
 import (
 	"errors"
 	"gopkg.in/yaml.v3"
-	"log"
 )
 
 const ModuleNotFoundError string = "no module found"
@@ -14,7 +13,7 @@ const ModuleNotFoundError string = "no module found"
 // Module
 // Any struct that implements these methods can be considered a module.
 type Module interface {
-	SetConfig(*ModuleConfig)
+	ParseSettings(map[string]interface{}) error
 	Config() ModuleConfig
 	Setup() error
 	TearDown() error
@@ -65,10 +64,9 @@ func (mr *Registry) Register(name string, mod Module) {
 // RunSetup
 // Runs the Setup method on each Registry.Modules
 func (mr *Registry) RunSetup() (err error) {
-	err = ReadConfigFromFile("")
 	// TODO handle priority of ModuleRegistry
 	for _, module := range mr.Modules {
-		log.Println(module.Config())
+		err = module.Setup()
 		if err != nil {
 			return
 		}
@@ -89,6 +87,19 @@ func (mr *Registry) RunUpdate() (err error) {
 	return
 }
 
+// RunTeardown
+// Runs the Setup method on each Registry.Modules
+func (mr *Registry) RunTeardown() (err error) {
+	// TODO handle priority of ModuleRegistry
+	for _, module := range mr.Modules {
+		err = module.TearDown()
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // setCurrent
 // Sets the config for each module in the repository from the settingsYAML.
 func (mr *Registry) setCurrent(settingsYAML []byte) error {
@@ -101,10 +112,11 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	// For each module in the registry, retrieve its settings from
 	// the ModuleSettings map and set them.
 	for moduleName, module := range mr.Modules {
-		if settings, ok := moduleSettings[moduleName]; ok {
-			info := module.Config()
-			info.Settings = settings
-			module.SetConfig(&info)
+		if rawSettings, ok := moduleSettings[moduleName]; ok {
+			err = module.ParseSettings(rawSettings.(map[string]interface{}))
+			if err != nil {
+				return err
+			}
 		}
 	}
 
