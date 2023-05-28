@@ -17,7 +17,7 @@ type genericPackageManager struct {
 }
 
 type packageManagerConfig struct {
-	Manager  string   `yaml:"pkg-manager"`
+	Manager  string   `yaml:"package-manager"`
 	Packages []string `yaml:"packages"`
 }
 

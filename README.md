@@ -4,12 +4,10 @@
 Welcome to **Gasible**, the ultimate solution for automating the setup of your local development environment. Our fast and efficient CLI tool, written in pure Go, makes the process of setting up a new development environment as easy and streamlined as possible. With Gasible, you can have your development environment up and running in minutes, not hours.
 
 ## Features
-- Installs packages using your chosen package manager (dnf, apt, yum, pacman, etc)
-- Sets up a bare git repository for local config management, or uses an existing GitHub repo
-- Configures general settings such as hostname, IP, and DNS
-- Configures services such as SSH
 - Customizable configurations through a config file
+- Modular add-ons for endless expandability
 - Easy-to-use command-line interface
+- Package management module for ease of use, using your favorite manager
 
 ## Installation
 ```bash
@@ -22,40 +20,28 @@ gasible [command]
 ```
 
 ## Commands
-- `init`: Initializes a new development environment
-- `config`: Shows the current configuration
-- `update`: Updates packages and configurations
+
+- `setup`: Runs the setup method on all modules
+- `update`: Runs the update method on all modules
+- `teardown`: Runs the teardown method on all modules
+- `config`: Shows the configuration commands
+  - `generate`: Generates a new config
 
 ## Configuration
-Gasible uses a config file named `config.yml` for customization. You can specify your own package manager, repositories, and configurations in this file. By default, Gasible will look for this file in the home directory, but you can specify a different location by passing the `-c` or `--config` flag.
+
+Gasible uses a config file named `config.yml` for customization.
+You can specify your own package manager, packages, and all the modules' configuration in this file.
+By default, Gasible will look for this file in `$HOME/.gas/`
 
 Below is the default config featuring all the supported options and some explanation
+
 ```YAML
 ---
 # Package manager config
-pkg-manager-command: dnf
-command-args: install -y
-packages:
-    - python3-pip
-    - util-linux-user
-    - wget
-    - neovim
-    - zsh
-    - docker
-    - gh
-# Which processes to run
-installer: true
-teamviewer: true
-ssh: true
-git: true
-# General config
-hostname: development-station
-staticIP: 192.168.4.20
-mask: 255.255.255.0
-TeamViewerCreds:
-    user: username
-    pass: password
-
+GenericPackageManager:
+  package-manager: "apt"
+  packages:
+    - cowsay
 ```
 
 ## Contribution
