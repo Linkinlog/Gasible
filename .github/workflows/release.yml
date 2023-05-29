@@ -27,25 +27,25 @@ jobs:
         env:
           GOOS: windows
           GOARCH: amd64
-        run: go build -o gasible-win-amd64-${{ env.VERSION }}.exe
+        run: go build -o gasible-win-amd64.exe
 
       - name: Build Linux amd64 binary
         env:
           GOOS: linux
           GOARCH: amd64
-        run: go build -o gasible-linux-amd64-${{ env.VERSION }}
+        run: go build -o gasible-linux-amd64
 
       - name: Build Mac Intel binary
         env:
           GOOS: darwin
           GOARCH: amd64
-        run: go build -o gasible-macos-amd64-${{ env.VERSION }}
+        run: go build -o gasible-macos-amd64
 
       - name: Build Mac M1 binary
         env:
           GOOS: darwin
           GOARCH: arm64
-        run: go build -o gasible-macos-arm64-${{ env.VERSION }}
+        run: go build -o gasible-macos-arm64
 
       - name: Create Release
         id: create_release
@@ -58,7 +58,7 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            gasible-macos-arm64-${{ env.VERSION }}
-            gasible-macos-amd64-${{ env.VERSION }}
-            gasible-linux-amd64-${{ env.VERSION }}
-            gasible-win-amd64-${{ env.VERSION }}.exe
+            gasible-macos-arm64
+            gasible-macos-amd64
+            gasible-linux-amd64
+            gasible-win-amd64.exe
