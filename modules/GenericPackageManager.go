@@ -5,7 +5,6 @@ import (
 	"github.com/Linkinlog/gasible/internal/core"
 	"gopkg.in/yaml.v3"
 	"log"
-	"runtime"
 )
 
 // Variable declaration
@@ -112,17 +111,12 @@ func UninstallPackages(packages []string) (err error) {
 // Helper functions
 
 func managePackages(packages []string, operation string) (err error) {
-	sys := core.System{
-		Name:   runtime.GOOS,
-		Runner: core.SudoRunner{},
-	}
-
 	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
 	if err != nil || moduleSettings == nil {
 		return errors.New("failed to get GenericPackageManager module settings")
 	}
 
-	packageMgr, err := determinePackageMgr(sys.Name, moduleSettings.Config().Settings.(packageManagerConfig).Manager)
+	packageMgr, err := determinePackageMgr(moduleSettings.Config().Settings.(packageManagerConfig).Manager)
 	if err != nil {
 		return err
 	}
@@ -142,7 +136,7 @@ func managePackages(packages []string, operation string) (err error) {
 	packagesAndArgs := append(formattedCommand, packages...)
 	log.Printf("Attempting to use %s to %s packages: %s...\n", packageMgr.getExecutable(), operation, packages)
 
-	out, err := sys.Exec(packageMgr.getExecutable(), packagesAndArgs)
+	out, err := core.CurrentState.System.Exec(packageMgr.getExecutable(), packagesAndArgs)
 	if err != nil {
 		return errors.Join(err, errors.New(string(out)))
 	}
@@ -150,14 +144,17 @@ func managePackages(packages []string, operation string) (err error) {
 	return
 }
 
-func determinePackageMgr(os string, manager string) (packageMgr packageManager, err error) {
+func determinePackageMgr(manager string) (packageMgr packageManager, err error) {
 	var ok bool
+	os := core.CurrentState.System.Name
 	if os == "darwin" {
-		// Failsafe as we only support brew on Mac
+		// Failsafe as we only support brew on Mac.
+		// Also, brew doesnt support being ran as sudo.
 		// TODO maybe?
 		packageMgr, ok = packageManagerMap["brew"]
 	} else {
 		packageMgr, ok = packageManagerMap[manager]
+		core.CurrentState.System.Runner = core.SudoRunner{}
 	}
 	if ok {
 		return packageMgr, nil

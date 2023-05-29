@@ -31,6 +31,10 @@ type cmdRunner interface {
 // cmdRunner implementation that uses sudo.
 type SudoRunner struct{}
 
+// NormalRunner
+// cmdRunner implementation that doesn't use sudo.
+type NormalRunner struct{}
+
 // Exec executes the command string.
 func (os System) Exec(command string, args []string) ([]byte, error) {
 	execCmd := os.Runner.Command(command, args...)
@@ -45,6 +49,18 @@ func (r SudoRunner) Command(name string, arg ...string) *exec.Cmd {
 		return nil
 	}
 	arg = append([]string{sudo, name}, arg...)
+	stringArg := strings.Join(arg, " ")
+	return exec.Command(shExec, shExecArg, stringArg)
+}
+
+// Command
+// Uses sudo to run command name with args arg.
+func (r NormalRunner) Command(name string, arg ...string) *exec.Cmd {
+	_, err := exec.LookPath(name)
+	if err != nil {
+		return nil
+	}
+	arg = append([]string{name}, arg...)
 	stringArg := strings.Join(arg, " ")
 	return exec.Command(shExec, shExecArg, stringArg)
 }

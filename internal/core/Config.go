@@ -4,12 +4,17 @@ import (
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 // CurrentState
 // The state of the app.
 var CurrentState = coreConfig{
 	Config: Config{ModuleRegistry: ModuleRegistry},
+	System: System{
+		Name:   runtime.GOOS,
+		Runner: NormalRunner{},
+	},
 }
 
 // moduleSettingsMap is a map holding settings for each module.
@@ -22,6 +27,7 @@ const configFile = ".config.yml"
 // The overall config for the app.
 type coreConfig struct {
 	Config
+	System
 }
 
 // Config The entire Config YAML.
