@@ -181,6 +181,9 @@ var packageManagerMap = map[string]packageManager{
 	"apt-get":  &aptitude{},
 	"aptitude": &aptitude{},
 	"brew":     &brew{},
+	"dnf":      &dnf{},
+	"pacman":   &pacman{},
+	"zypper":   &zypper{},
 }
 
 // Package manager structs below
@@ -227,5 +230,74 @@ func (apt *aptitude) getCommandOptions() *packageManagerOpts {
 	return &packageManagerOpts{
 		AutoConfirmOpt: "-y",
 		QuietOpt:       "-qq",
+	}
+}
+
+// dnf
+type dnf struct{}
+
+func (dnf *dnf) getExecutable() string {
+	return "dnf"
+}
+
+func (dnf *dnf) getSubCommands() *packageManagerArgs {
+	return &packageManagerArgs{
+		InstallArg:   "install",
+		UninstallArg: "remove",
+		UpdateArg:    "upgrade",
+		UpgradeArg:   "upgrade",
+	}
+}
+
+func (dnf *dnf) getCommandOptions() *packageManagerOpts {
+	return &packageManagerOpts{
+		AutoConfirmOpt: "-y",
+		QuietOpt:       "-q",
+	}
+}
+
+// pacman
+type pacman struct{}
+
+func (pacman *pacman) getExecutable() string {
+	return "pacman"
+}
+
+func (pacman *pacman) getSubCommands() *packageManagerArgs {
+	return &packageManagerArgs{
+		InstallArg:   "-S",
+		UninstallArg: "-R",
+		UpdateArg:    "-Syu",
+		UpgradeArg:   "-Syu",
+	}
+}
+
+func (pacman *pacman) getCommandOptions() *packageManagerOpts {
+	return &packageManagerOpts{
+		AutoConfirmOpt: "--noconfirm",
+		QuietOpt:       "--quiet",
+	}
+}
+
+// zypper
+type zypper struct{}
+
+func (zypper *zypper) getExecutable() string {
+	return "zypper"
+}
+
+func (zypper *zypper) getSubCommands() *packageManagerArgs {
+	return &packageManagerArgs{
+		InstallArg:   "in",
+		UninstallArg: "rm",
+		UpdateArg:    "in",
+		UpgradeArg:   "up",
+	}
+}
+
+func (zypper *zypper) getCommandOptions() *packageManagerOpts {
+	return &packageManagerOpts{
+		AutoConfirmOpt: "--non-interactive",
+		QuietOpt:       "--quiet",
 	}
 }
