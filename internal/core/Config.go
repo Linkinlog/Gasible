@@ -13,7 +13,7 @@ var CurrentState = coreConfig{
 	Config: Config{ModuleRegistry: ModuleRegistry},
 	System: System{
 		Name:   runtime.GOOS,
-		Runner: NormalRunner{},
+		Runner: normalRunner{},
 	},
 }
 
@@ -21,7 +21,7 @@ var CurrentState = coreConfig{
 var moduleSettingsMap = make(map[string]interface{})
 
 const configDir = ".gas"
-const configFile = ".config.yml"
+const configFile = "config.yml"
 
 // coreConfig
 // The overall config for the app.
@@ -43,7 +43,7 @@ func (conf *Config) WriteConfigToFile() (err error) {
 	// For each module in the registry,
 	// retrieve its settings and store them in the ModuleSettings map.
 	for moduleName, module := range conf.ModuleRegistry.Modules {
-		moduleSettingsMap[moduleName] = module.Config().Settings
+		moduleSettingsMap[moduleName] = module.Config()
 	}
 
 	// Marshal the ModuleSettings map to YAML.

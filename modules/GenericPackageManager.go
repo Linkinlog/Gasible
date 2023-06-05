@@ -10,13 +10,12 @@ import (
 // Variable declaration
 
 type genericPackageManager struct {
-	Priority int
 	Enabled  bool
 	Settings packageManagerConfig
 }
 
 type packageManagerConfig struct {
-	Manager  string   `yaml:"package-manager"`
+	Manager  string   `yaml:"manager"`
 	Packages []string `yaml:"packages"`
 }
 
@@ -42,7 +41,6 @@ type packageManagerOpts struct {
 // This should really just handle registering the module in the registry.
 func init() {
 	core.ModuleRegistry.Register("GenericPackageManager", &genericPackageManager{
-		Priority: 0,
 		Enabled:  true,
 		Settings: packageManagerConfig{},
 	})
@@ -51,57 +49,54 @@ func init() {
 // Interface methods
 
 func (packageMan *genericPackageManager) Setup() error {
-	return InstallPackages(packageMan.Settings.Packages)
+	return installPackages(packageMan.Settings.Packages)
 }
 
 func (packageMan *genericPackageManager) TearDown() error {
-	return UninstallPackages(packageMan.Settings.Packages)
+	return uninstallPackages(packageMan.Settings.Packages)
 }
 
 func (packageMan *genericPackageManager) Update() error {
-	return UpdatePackages(packageMan.Settings.Packages)
+	return updatePackages(packageMan.Settings.Packages)
 }
 
 func (packageMan *genericPackageManager) Config() core.ModuleConfig {
 	return core.ModuleConfig{
-		Priority: packageMan.Priority,
 		Enabled:  packageMan.Enabled,
 		Settings: packageMan.Settings,
 	}
 }
 
-func (packageMan *genericPackageManager) ParseSettings(rawSettings map[string]interface{}) (err error) {
-	settingsBytes, err := yaml.Marshal(rawSettings)
+func (packageMan *genericPackageManager) ParseConfig(rawConfig map[string]interface{}) (err error) {
+	configBytes, err := yaml.Marshal(rawConfig)
 	if err != nil {
 		return
 	}
 
-	var settings packageManagerConfig
-	err = yaml.Unmarshal(settingsBytes, &settings)
+	err = yaml.Unmarshal(configBytes, packageMan)
 	if err != nil {
 		return
 	}
-	packageMan.Settings = settings
 	return nil
 }
 
 // Methods that may be useful for other packages
 
-func UpdatePackages(packages []string) (err error) {
+func updatePackages(packages []string) (err error) {
 	if len(packages) > 0 {
 		return managePackages(packages, "update")
 	}
 	return
 }
 
-func InstallPackages(packages []string) (err error) {
+func installPackages(packages []string) (err error) {
 	if len(packages) > 0 {
 		return managePackages(packages, "install")
 	}
 	return
 }
 
-func UninstallPackages(packages []string) (err error) {
+func uninstallPackages(packages []string) (err error) {
 	if len(packages) > 0 {
 		return managePackages(packages, "uninstall")
 	}
@@ -140,7 +135,7 @@ func managePackages(packages []string, operation string) (err error) {
 	if err != nil {
 		return errors.Join(err, errors.New(string(out)))
 	}
-	log.Printf("Package %s finished.\n Output: %s\n", operation, string(out))
+	log.Printf("%sPackage %s finished.\n", string(out), operation)
 	return
 }
 
@@ -149,7 +144,7 @@ func determinePackageMgr(manager string) (packageMgr packageManager, err error) 
 	os := core.CurrentState.System.Name
 	if os == "darwin" {
 		// Failsafe as we only support brew on Mac.
-		// Also, brew doesnt support being ran as sudo.
+		// Also, brew doesn't support being ran as sudo.
 		// TODO maybe?
 		packageMgr, ok = packageManagerMap["brew"]
 	} else {

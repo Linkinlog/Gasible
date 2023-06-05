@@ -13,7 +13,7 @@ const ModuleNotFoundError string = "no module found"
 // Module
 // Any struct that implements these methods can be considered a module.
 type Module interface {
-	ParseSettings(map[string]interface{}) error
+	ParseConfig(map[string]interface{}) error
 	Config() ModuleConfig
 	Setup() error
 	TearDown() error
@@ -23,9 +23,8 @@ type Module interface {
 // ModuleConfig
 // General items we may need to track for each module.
 type ModuleConfig struct {
-	Priority int
-	Enabled  bool
-	Settings interface{}
+	Enabled  bool        `yaml:"enabled"`
+	Settings interface{} `yaml:"settings"`
 }
 
 // Registry
@@ -68,6 +67,9 @@ func (mr *Registry) Register(name string, mod Module) {
 func (mr *Registry) RunSetup() (err error) {
 	// TODO handle priority of ModuleRegistry
 	for _, module := range mr.Modules {
+		if !module.Config().Enabled {
+			return nil
+		}
 		err = module.Setup()
 		if err != nil {
 			return
@@ -115,7 +117,7 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	// the ModuleSettings map and set them.
 	for moduleName, module := range mr.Modules {
 		if rawSettings, ok := moduleSettingsMap[moduleName]; ok {
-			err = module.ParseSettings(rawSettings.(map[string]interface{}))
+			err = module.ParseConfig(rawSettings.(map[string]interface{}))
 			if err != nil {
 				return err
 			}

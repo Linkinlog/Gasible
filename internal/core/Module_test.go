@@ -9,7 +9,7 @@ import (
 // Test that we can make a new module and register it
 type MockModule struct{}
 
-func (mock MockModule) ParseSettings(_ map[string]interface{}) error {
+func (mock MockModule) ParseConfig(_ map[string]interface{}) error {
 	return nil
 }
 
