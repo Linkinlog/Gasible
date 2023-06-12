@@ -15,8 +15,9 @@ type genericPackageManager struct {
 }
 
 type packageManagerConfig struct {
-	Manager  string   `yaml:"manager"`
-	Packages []string `yaml:"packages"`
+	Manager      string   `yaml:"manager"`
+	Packages     []string `yaml:"packages"`
+	Dependencies []string `yaml:"dependencies"`
 }
 
 type packageManager interface {
@@ -78,6 +79,10 @@ func (packageMan *genericPackageManager) ParseConfig(rawConfig map[string]interf
 		return
 	}
 	return nil
+}
+
+func (packageMan *genericPackageManager) GetDeps() (deps []string) {
+	return
 }
 
 // Methods that may be useful for other packages
