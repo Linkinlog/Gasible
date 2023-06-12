@@ -67,41 +67,17 @@ func (mr *Registry) Register(name string, mod Module) {
 
 // RunSetup Runs the Setup method on each Registry.Modules
 func (mr *Registry) RunSetup() (err error) {
-	// TODO handle priority of ModuleRegistry
-	for _, module := range mr.Modules {
-		if !module.Config().Enabled {
-			return nil
-		}
-		err = module.Setup()
-		if err != nil {
-			return
-		}
-	}
-	return
+	return mr.executeInOrder(Module.Setup)
 }
 
 // RunUpdate runs the Setup method on each Registry.Modules
 func (mr *Registry) RunUpdate() (err error) {
-	// TODO handle priority of ModuleRegistry
-	for _, module := range mr.Modules {
-		err = module.Update()
-		if err != nil {
-			return
-		}
-	}
-	return
+	return mr.executeInOrder(Module.Update)
 }
 
 // RunTeardown runs the Setup method on each Registry.Modules
 func (mr *Registry) RunTeardown() (err error) {
-	// TODO handle priority of ModuleRegistry
-	for _, module := range mr.Modules {
-		err = module.TearDown()
-		if err != nil {
-			return
-		}
-	}
-	return
+	return mr.executeInOrder(Module.TearDown)
 }
 
 // setCurrent sets the Config for each module in the repository from the settingsYAML.
@@ -115,6 +91,20 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	// For each module in the registry, retrieve its settings from
 	// the ModuleSettings map and set them.
 	for moduleName, module := range mr.Modules {
+		rawSettings, ok := moduleSettingsMap[moduleName]
+		if !ok {
+			return fmt.Errorf("unable to get raw settings for module: %s", moduleName)
+		}
+
+		rawSettingsMap, ok := rawSettings.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("settings for module %s are not a valid map", moduleName)
+		}
+
+		err = module.ParseConfig(rawSettingsMap)
+		if err != nil {
+			return err
+		}
 		if rawSettings, ok := moduleSettingsMap[moduleName]; ok {
 			err = module.ParseConfig(rawSettings.(map[string]interface{}))
 			if err != nil {
@@ -124,4 +114,62 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	}
 
 	return nil
+}
+
+// executeInOrder runs the action on all modules in topologically sorted order.
+func (mr *Registry) executeInOrder(action moduleAction) (err error) {
+	order, err := mr.TopologicallySortedModuleDeps()
+	if err != nil {
+		return fmt.Errorf("could not order: %w", err)
+	}
+	for _, moduleName := range order {
+		module := mr.Modules[moduleName]
+		if !module.Config().Enabled {
+			return nil
+		}
+		err = action(module)
+		if err != nil {
+			return fmt.Errorf("RunSetup failed: %w", err)
+		}
+	}
+	return
+}
+
+// TopologicallySortedModuleDeps sorts modules into a directed acyclic graph (hopefully).
+func (mr *Registry) TopologicallySortedModuleDeps() ([]string, error) {
+	order := make([]string, 0)
+	visited := make(map[string]bool)
+	temp := make(map[string]bool)
+
+	var visitAllDependencies func(node string) error
+	visitAllDependencies = func(node string) error {
+		if temp[node] {
+			return dependencyGraphCycleError
+		}
+		if !visited[node] {
+			temp[node] = true
+			for _, v := range mr.Dependencies[node] {
+				if _, exists := mr.Dependencies[v]; !exists {
+					return fmt.Errorf("dependency %s for module %s does not exist", v, node)
+				}
+				err := visitAllDependencies(v)
+				if err != nil {
+					return fmt.Errorf("couldnt visit all dependencies: %w", err)
+				}
+			}
+			visited[node] = true
+			temp[node] = false
+			order = append(order, node)
+		}
+		return nil
+	}
+
+	for k := range mr.Dependencies {
+		err := visitAllDependencies(k)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return order, nil
 }
