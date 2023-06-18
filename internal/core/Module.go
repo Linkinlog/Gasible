@@ -144,7 +144,7 @@ func (mr *Registry) TopologicallySortedModuleDeps() ([]string, error) {
 	var visitAllDependencies func(node string) error
 	visitAllDependencies = func(node string) error {
 		if temp[node] {
-			return dependencyGraphCycleError
+			return fmt.Errorf("dependency %s exists, %w", node, dependencyGraphCycleError)
 		}
 		if !visited[node] {
 			temp[node] = true
@@ -154,7 +154,7 @@ func (mr *Registry) TopologicallySortedModuleDeps() ([]string, error) {
 				}
 				err := visitAllDependencies(v)
 				if err != nil {
-					return fmt.Errorf("couldnt visit all dependencies: %w", err)
+					return err
 				}
 			}
 			visited[node] = true
