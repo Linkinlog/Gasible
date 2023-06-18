@@ -10,6 +10,7 @@ import (
 // Variable declaration
 
 type genericPackageManager struct {
+	name     string
 	Enabled  bool
 	Settings packageManagerConfig
 }
@@ -41,7 +42,8 @@ type packageManagerOpts struct {
 // init
 // This should really just handle registering the module in the registry.
 func init() {
-	core.ModuleRegistry.Register("GenericPackageManager", &genericPackageManager{
+	core.ModuleRegistry.Register(&genericPackageManager{
+		name:     "GenericPackageManager",
 		Enabled:  true,
 		Settings: packageManagerConfig{},
 	})
@@ -59,6 +61,10 @@ func (packageMan *genericPackageManager) TearDown() error {
 
 func (packageMan *genericPackageManager) Update() error {
 	return updatePackages(packageMan.Settings.Packages)
+}
+
+func (packageMan *genericPackageManager) Name() string {
+	return packageMan.name
 }
 
 func (packageMan *genericPackageManager) Config() core.ModuleConfig {
@@ -81,7 +87,7 @@ func (packageMan *genericPackageManager) ParseConfig(rawConfig map[string]interf
 	return nil
 }
 
-func (packageMan *genericPackageManager) GetDeps() (deps []string) {
+func (packageMan *genericPackageManager) GetModuleDeps() (deps []string) {
 	return
 }
 

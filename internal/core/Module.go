@@ -19,10 +19,11 @@ type moduleAction func(Module) error
 type Module interface {
 	ParseConfig(map[string]interface{}) error
 	Config() ModuleConfig
+	Name() string
 	Setup() error
 	TearDown() error
 	Update() error
-	GetDeps() []string
+	GetModuleDeps() []string
 }
 
 // ModuleConfig
@@ -60,9 +61,9 @@ func (mr *Registry) Get(mod string) (Module, error) {
 }
 
 // Register adds a new module to an existing registry.
-func (mr *Registry) Register(name string, mod Module) {
-	mr.Modules[name] = mod
-	mr.Dependencies[name] = mod.GetDeps()
+func (mr *Registry) Register(mod Module) {
+	mr.Modules[mod.Name()] = mod
+	mr.Dependencies[mod.Name()] = mod.GetModuleDeps()
 }
 
 // RunSetup Runs the Setup method on each Registry.Modules
@@ -120,7 +121,7 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 func (mr *Registry) executeInOrder(action moduleAction) (err error) {
 	order, err := mr.TopologicallySortedModuleDeps()
 	if err != nil {
-		return fmt.Errorf("could not order: %w", err)
+		return fmt.Errorf("could not sort: %w", err)
 	}
 	for _, moduleName := range order {
 		module := mr.Modules[moduleName]
