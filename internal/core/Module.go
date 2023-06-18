@@ -10,7 +10,6 @@ import (
 )
 
 var ModuleNotFoundError = errors.New("no module found")
-var dependencyGraphCycleError = errors.New("there is a cycle in the module dependencies")
 
 type moduleAction func(Module) error
 
@@ -33,9 +32,9 @@ type ModuleConfig struct {
 	Settings interface{} `yaml:"settings"`
 }
 
-// Registry
-// This registry contains Modules.
-// The Modules take a string and map it to a Module.
+// Registry holds Modules and their respective dependencies.
+// Modules is a map where keys are module identifiers and values are Module instances.
+// Dependencies is a map where keys are module identifiers and values are slices of module identifiers that the key module depends on.
 type Registry struct {
 	Modules      map[string]Module
 	Dependencies map[string][]string
@@ -119,12 +118,11 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 
 // executeInOrder runs the action on all modules in topologically sorted order.
 func (mr *Registry) executeInOrder(action moduleAction) (err error) {
-	order, err := mr.TopologicallySortedModuleDeps()
+	order, err := mr.TopologicallySortedModules()
 	if err != nil {
 		return fmt.Errorf("could not sort: %w", err)
 	}
-	for _, moduleName := range order {
-		module := mr.Modules[moduleName]
+	for _, module := range order {
 		if !module.Config().Enabled {
 			return nil
 		}
@@ -136,37 +134,39 @@ func (mr *Registry) executeInOrder(action moduleAction) (err error) {
 	return
 }
 
-// TopologicallySortedModuleDeps sorts modules into a directed acyclic graph (hopefully).
-func (mr *Registry) TopologicallySortedModuleDeps() ([]string, error) {
-	order := make([]string, 0)
+// TopologicallySortedModules returns a slice of module identifiers sorted in topological order.
+// The order ensures that each module comes before any module that depends on it.
+// Returns an error if a module's dependency doesn't exist or if a circular dependency is detected.
+func (mr *Registry) TopologicallySortedModules() ([]Module, error) {
+	order := make([]Module, 0)
 	visited := make(map[string]bool)
-	temp := make(map[string]bool)
+	temp := make(map[string]bool) // used to detect circular dependencies
 
-	var visitAllDependencies func(node string) error
-	visitAllDependencies = func(node string) error {
-		if temp[node] {
-			return fmt.Errorf("dependency %s exists, %w", node, dependencyGraphCycleError)
+	var visitAllDependenciesAndSort func(moduleName string) error
+	visitAllDependenciesAndSort = func(moduleName string) error {
+		if temp[moduleName] {
+			return fmt.Errorf("circular dependency detected in moduleName %s", moduleName)
 		}
-		if !visited[node] {
-			temp[node] = true
-			for _, v := range mr.Dependencies[node] {
-				if _, exists := mr.Dependencies[v]; !exists {
-					return fmt.Errorf("dependency %s for module %s does not exist", v, node)
+		if !visited[moduleName] {
+			temp[moduleName] = true
+			for _, moduleDependencyName := range mr.Dependencies[moduleName] {
+				if _, exists := mr.Modules[moduleDependencyName]; !exists {
+					return fmt.Errorf("module dependency %s for moduleName %s does not exist", moduleDependencyName, moduleName)
 				}
-				err := visitAllDependencies(v)
+				err := visitAllDependenciesAndSort(moduleDependencyName)
 				if err != nil {
 					return err
 				}
 			}
-			visited[node] = true
-			temp[node] = false
-			order = append(order, node)
+			visited[moduleName] = true
+			temp[moduleName] = false
+			order = append(order, mr.Modules[moduleName])
 		}
 		return nil
 	}
 
-	for k := range mr.Dependencies {
-		err := visitAllDependencies(k)
+	for modName := range mr.Modules {
+		err := visitAllDependenciesAndSort(modName)
 		if err != nil {
 			return nil, err
 		}

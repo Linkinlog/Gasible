@@ -96,7 +96,5 @@ func TestTopologicalSortInstallsInOrder(t *testing.T) {
 	}
 	if expectedResult != stringResult {
 		t.Fatalf("modules out of order, expected %v, got %v", expectedResult, returnVal)
-	} else {
-		t.Log(returnVal)
 	}
 }
