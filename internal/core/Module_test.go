@@ -6,7 +6,6 @@ import (
 	"github.com/Linkinlog/gasible/internal/core"
 )
 
-// Test that we can make a new module and register it
 type MockModule struct {
 	name string
 	deps []string
@@ -25,6 +24,7 @@ type TestCase struct {
 	TestModule core.Module
 }
 
+// Test that we can make a new module and register it
 func TestRegisterAndGetNewModule(t *testing.T) {
 	testCase := TestCase{
 		TestName: "test",
