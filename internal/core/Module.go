@@ -22,7 +22,6 @@ type Module interface {
 	Setup() error
 	TearDown() error
 	Update() error
-	GetModuleDeps() []string
 }
 
 // ModuleConfig
@@ -36,14 +35,12 @@ type ModuleConfig struct {
 // Modules is a map where keys are module identifiers and values are Module instances.
 // Dependencies is a map where keys are module identifiers and values are slices of module identifiers that the key module depends on.
 type Registry struct {
-	Modules      map[string]Module
-	Dependencies map[string][]string
+	Modules map[string]Module
 }
 
 func NewModuleRegistry() *Registry {
 	return &Registry{
-		Modules:      make(map[string]Module),
-		Dependencies: make(map[string][]string),
+		Modules: make(map[string]Module),
 	}
 }
 
@@ -62,22 +59,21 @@ func (mr *Registry) Get(mod string) (Module, error) {
 // Register adds a new module to an existing registry.
 func (mr *Registry) Register(mod Module) {
 	mr.Modules[mod.Name()] = mod
-	mr.Dependencies[mod.Name()] = mod.GetModuleDeps()
 }
 
 // RunSetup Runs the Setup method on each Registry.Modules
 func (mr *Registry) RunSetup() (err error) {
-	return mr.executeInOrder(Module.Setup)
+	return mr.execute(Module.Setup)
 }
 
 // RunUpdate runs the Setup method on each Registry.Modules
 func (mr *Registry) RunUpdate() (err error) {
-	return mr.executeInOrder(Module.Update)
+	return mr.execute(Module.Update)
 }
 
 // RunTeardown runs the Setup method on each Registry.Modules
 func (mr *Registry) RunTeardown() (err error) {
-	return mr.executeInOrder(Module.TearDown)
+	return mr.execute(Module.TearDown)
 }
 
 // setCurrent sets the Config for each module in the repository from the settingsYAML.
@@ -116,13 +112,9 @@ func (mr *Registry) setCurrent(settingsYAML []byte) error {
 	return nil
 }
 
-// executeInOrder runs the action on all modules in topologically sorted order.
-func (mr *Registry) executeInOrder(action moduleAction) (err error) {
-	order, err := mr.TopologicallySortedModules()
-	if err != nil {
-		return fmt.Errorf("could not sort: %w", err)
-	}
-	for _, module := range order {
+// execute runs the action on all modules in no order.
+func (mr *Registry) execute(action moduleAction) (err error) {
+	for _, module := range mr.Modules {
 		if !module.Config().Enabled {
 			return nil
 		}
@@ -132,45 +124,4 @@ func (mr *Registry) executeInOrder(action moduleAction) (err error) {
 		}
 	}
 	return
-}
-
-// TopologicallySortedModules returns a slice of module identifiers sorted in topological order.
-// The order ensures that each module comes before any module that depends on it.
-// Returns an error if a module's dependency doesn't exist or if a circular dependency is detected.
-func (mr *Registry) TopologicallySortedModules() ([]Module, error) {
-	order := make([]Module, 0)
-	visited := make(map[string]bool)
-	temp := make(map[string]bool) // used to detect circular dependencies
-
-	var visitAllDependenciesAndSort func(moduleName string) error
-	visitAllDependenciesAndSort = func(moduleName string) error {
-		if temp[moduleName] {
-			return fmt.Errorf("circular dependency detected in moduleName %s", moduleName)
-		}
-		if !visited[moduleName] {
-			temp[moduleName] = true
-			for _, moduleDependencyName := range mr.Dependencies[moduleName] {
-				if _, exists := mr.Modules[moduleDependencyName]; !exists {
-					return fmt.Errorf("module dependency %s for moduleName %s does not exist", moduleDependencyName, moduleName)
-				}
-				err := visitAllDependenciesAndSort(moduleDependencyName)
-				if err != nil {
-					return err
-				}
-			}
-			visited[moduleName] = true
-			temp[moduleName] = false
-			order = append(order, mr.Modules[moduleName])
-		}
-		return nil
-	}
-
-	for modName := range mr.Modules {
-		err := visitAllDependenciesAndSort(modName)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return order, nil
 }

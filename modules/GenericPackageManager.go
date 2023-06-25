@@ -2,6 +2,7 @@ package modules
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Linkinlog/gasible/internal/core"
 	"gopkg.in/yaml.v3"
 	"log"
@@ -52,15 +53,15 @@ func init() {
 // Interface methods
 
 func (packageMan *genericPackageManager) Setup() error {
-	return installPackages(packageMan.Settings.Packages)
+	return managePackages(packageMan.Settings.Packages, "install")
 }
 
 func (packageMan *genericPackageManager) TearDown() error {
-	return uninstallPackages(packageMan.Settings.Packages)
+	return managePackages(packageMan.Settings.Packages, "uninstall")
 }
 
 func (packageMan *genericPackageManager) Update() error {
-	return updatePackages(packageMan.Settings.Packages)
+	return managePackages(packageMan.Settings.Packages, "update")
 }
 
 func (packageMan *genericPackageManager) Name() string {
@@ -87,31 +88,26 @@ func (packageMan *genericPackageManager) ParseConfig(rawConfig map[string]interf
 	return nil
 }
 
-func (packageMan *genericPackageManager) GetModuleDeps() (deps []string) {
-	return
-}
-
 // Methods that may be useful for other packages
 
-func updatePackages(packages []string) (err error) {
-	if len(packages) > 0 {
-		return managePackages(packages, "update")
+// addToInstaller is a helper function so other modules can install packages.
+// It takes packageMap which is a map of a package manager name to a slice of packages to install.
+// Allows someone to create a map of all supported package managers and the differing packages between them.
+func (packageMan *genericPackageManager) addToInstaller(packageMap map[string][]string) error {
+	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
+	if err != nil || moduleSettings == nil {
+		return errors.New("failed to get GenericPackageManager module settings")
 	}
-	return
-}
-
-func installPackages(packages []string) (err error) {
-	if len(packages) > 0 {
-		return managePackages(packages, "install")
+	packageMgr, err := determinePackageMgr(packageMan.Settings.Manager)
+	if err != nil {
+		return err
 	}
-	return
-}
-
-func uninstallPackages(packages []string) (err error) {
-	if len(packages) > 0 {
-		return managePackages(packages, "uninstall")
+	if deps, ok := packageMap[packageMgr.getExecutable()]; !ok {
+		return fmt.Errorf("failed to find package manager %s in package map", packageMgr)
+	} else {
+		packageMan.Settings.Packages = append(packageMan.Settings.Packages, deps...)
+		return nil
 	}
-	return
 }
 
 // Helper functions
@@ -165,7 +161,7 @@ func determinePackageMgr(manager string) (packageMgr packageManager, err error) 
 	if ok {
 		return packageMgr, nil
 	} else {
-		return nil, errors.New("package manager not found")
+		return nil, fmt.Errorf("package manager %s not found", manager)
 	}
 }
 
