@@ -10,22 +10,30 @@ import (
 
 // Variable declaration
 
-type genericPackageManager struct {
-	name     string
-	Enabled  bool
-	Settings packageManagerConfig
+type PackageManagerMap map[*packageManager][]string
+
+type GenericPackageManager struct {
+	Name              string
+	Enabled           bool
+	Settings          PackageManagerConfig
+	PackageManagerMap PackageManagerMap
 }
 
-type packageManagerConfig struct {
-	Manager      string   `yaml:"manager"`
-	Packages     []string `yaml:"packages"`
-	Dependencies []string `yaml:"dependencies"`
+type PackageManagerConfig struct {
+	Manager  string   `yaml:"manager"`
+	Packages []string `yaml:"packages"`
 }
 
-type packageManager interface {
+type packageManagerer interface {
 	getExecutable() string
 	getSubCommands() *packageManagerArgs
 	getCommandOptions() *packageManagerOpts
+}
+
+type packageManager struct {
+	Name string
+	packageManagerArgs
+	packageManagerOpts
 }
 
 type packageManagerArgs struct {
@@ -43,39 +51,43 @@ type packageManagerOpts struct {
 // init
 // This should really just handle registering the module in the registry.
 func init() {
-	core.ModuleRegistry.Register(&genericPackageManager{
-		name:     "GenericPackageManager",
-		Enabled:  true,
-		Settings: packageManagerConfig{},
+	core.ModuleRegistry.Register(&GenericPackageManager{
+		Name:              "GenericPackageManager",
+		Enabled:           true,
+		Settings:          PackageManagerConfig{},
+		PackageManagerMap: make(PackageManagerMap),
 	})
 }
 
 // Interface methods
 
-func (packageMan *genericPackageManager) Setup() error {
-	return managePackages(packageMan.Settings.Packages, "install")
+func (packageMan *GenericPackageManager) Setup() error {
+	packageMan.validateAndAddModulePackages()
+	return managePackages(packageMan.manager(), packageMan.Settings.Packages, "install")
 }
 
-func (packageMan *genericPackageManager) TearDown() error {
-	return managePackages(packageMan.Settings.Packages, "uninstall")
+func (packageMan *GenericPackageManager) TearDown() error {
+	packageMan.validateAndAddModulePackages()
+	return managePackages(packageMan.manager(), packageMan.Settings.Packages, "uninstall")
 }
 
-func (packageMan *genericPackageManager) Update() error {
-	return managePackages(packageMan.Settings.Packages, "update")
+func (packageMan *GenericPackageManager) Update() error {
+	packageMan.validateAndAddModulePackages()
+	return managePackages(packageMan.manager(), packageMan.Settings.Packages, "update")
 }
 
-func (packageMan *genericPackageManager) Name() string {
-	return packageMan.name
+func (packageMan *GenericPackageManager) GetName() string {
+	return packageMan.Name
 }
 
-func (packageMan *genericPackageManager) Config() core.ModuleConfig {
+func (packageMan *GenericPackageManager) Config() core.ModuleConfig {
 	return core.ModuleConfig{
 		Enabled:  packageMan.Enabled,
 		Settings: packageMan.Settings,
 	}
 }
 
-func (packageMan *genericPackageManager) ParseConfig(rawConfig map[string]interface{}) (err error) {
+func (packageMan *GenericPackageManager) ParseConfig(rawConfig map[string]interface{}) (err error) {
 	configBytes, err := yaml.Marshal(rawConfig)
 	if err != nil {
 		return
@@ -90,39 +102,42 @@ func (packageMan *genericPackageManager) ParseConfig(rawConfig map[string]interf
 
 // Methods that may be useful for other packages
 
-// addToInstaller is a helper function so other modules can install packages.
-// It takes packageMap which is a map of a package manager name to a slice of packages to install.
+// AddToInstaller is a helper function so other modules can install packages.
+// It takes packageMap, which is a map of a package manager Name to a slice of packages to install.
 // Allows someone to create a map of all supported package managers and the differing packages between them.
-func (packageMan *genericPackageManager) addToInstaller(packageMap map[string][]string) error {
-	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
-	if err != nil || moduleSettings == nil {
-		return errors.New("failed to get GenericPackageManager module settings")
+func (packageMan *GenericPackageManager) AddToInstaller(packageMap PackageManagerMap) {
+	if len(packageMap) == 0 || packageMan.PackageManagerMap == nil {
+		return
 	}
-	packageMgr, err := determinePackageMgr(packageMan.Settings.Manager)
-	if err != nil {
-		return err
-	}
-	if deps, ok := packageMap[packageMgr.getExecutable()]; !ok {
-		return fmt.Errorf("failed to find package manager %s in package map", packageMgr)
-	} else {
-		packageMan.Settings.Packages = append(packageMan.Settings.Packages, deps...)
-		return nil
+	for key, val := range packageMap {
+		packageMan.PackageManagerMap[key] = append(packageMan.PackageManagerMap[key], val...)
 	}
 }
 
 // Helper functions
 
-func managePackages(packages []string, operation string) (err error) {
+func (packageMan *GenericPackageManager) manager() *packageManager {
 	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
 	if err != nil || moduleSettings == nil {
-		return errors.New("failed to get GenericPackageManager module settings")
+		log.Fatalf("failed to get GenericPackageManager module settings")
+		return nil
 	}
 
-	packageMgr, err := determinePackageMgr(moduleSettings.Config().Settings.(packageManagerConfig).Manager)
+	packageMgr, err := determinePackageMgr(moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
 	if err != nil {
-		return err
+		log.Fatal(err)
+		return nil
 	}
 
+	return packageMgr
+}
+
+func (packageMan *GenericPackageManager) validateAndAddModulePackages() {
+	packagesForCurrentManager := packageMan.PackageManagerMap[packageMan.manager()]
+	packageMan.Settings.Packages = append(packageMan.Settings.Packages, packagesForCurrentManager...)
+}
+
+func managePackages(packageMgr *packageManager, packages []string, operation string) (err error) {
 	// Get the appropriate command argument based on the operation type.
 	var commandArg string
 	switch operation {
@@ -146,16 +161,16 @@ func managePackages(packages []string, operation string) (err error) {
 	return
 }
 
-func determinePackageMgr(manager string) (packageMgr packageManager, err error) {
+func determinePackageMgr(manager string) (packageMgr *packageManager, err error) {
 	var ok bool
 	os := core.CurrentState.System.Name
 	if os == "darwin" {
 		// Failsafe as we only support brew on Mac.
 		// Also, brew doesn't support being ran as sudo.
 		// TODO maybe?
-		packageMgr, ok = packageManagerMap["brew"]
+		packageMgr, ok = supportedPackageManagers["brew"]
 	} else {
-		packageMgr, ok = packageManagerMap[manager]
+		packageMgr, ok = supportedPackageManagers[manager]
 		core.CurrentState.System.Runner = core.SudoRunner{}
 	}
 	if ok {
@@ -168,7 +183,7 @@ func determinePackageMgr(manager string) (packageMgr packageManager, err error) 
 // formatCommand
 // Should format the shell command
 // with the proper operation (install, update, etc).
-func formatCommand(packageMgr packageManager, operation string) []string {
+func formatCommand(packageMgr packageManagerer, operation string) []string {
 	return []string{
 		operation,
 		packageMgr.getCommandOptions().AutoConfirmOpt,
@@ -176,130 +191,103 @@ func formatCommand(packageMgr packageManager, operation string) []string {
 	}
 }
 
-// packageManagerMap
+// PackageManagerMap
 // Give it a string, get a packageManager.
-var packageManagerMap = map[string]packageManager{
-	"apt":      &aptitude{},
-	"apt-get":  &aptitude{},
-	"aptitude": &aptitude{},
-	"brew":     &brew{},
-	"dnf":      &dnf{},
-	"pacman":   &pacman{},
-	"zypper":   &zypper{},
+var supportedPackageManagers = map[string]*packageManager{
+	"apt":      &Aptitude,
+	"apt-get":  &Aptitude,
+	"Aptitude": &Aptitude,
+	"brew":     &Brew,
+	"dnf":      &Dnf,
+	"pacman":   &Pacman,
+	"zypper":   &Zypper,
 }
 
-// Package manager structs below
+// package manager methods &structs are below
 
-// brew
-type brew struct{}
-
-func (brew *brew) getExecutable() string {
-	return "brew"
+func (p *packageManager) getExecutable() string {
+	return p.Name
 }
-func (brew *brew) getSubCommands() *packageManagerArgs {
-	return &packageManagerArgs{
+
+func (p *packageManager) getSubCommands() *packageManagerArgs {
+	return &p.packageManagerArgs
+}
+
+func (p *packageManager) getCommandOptions() *packageManagerOpts {
+	return &p.packageManagerOpts
+}
+
+// Brew is the package manager for Mac
+var Brew packageManager = packageManager{
+	Name: "brew",
+	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "install",
 		UninstallArg: "uninstall",
 		UpdateArg:    "update",
 		UpgradeArg:   "upgrade",
-	}
-}
-
-func (brew *brew) getCommandOptions() *packageManagerOpts {
-	return &packageManagerOpts{
+	},
+	packageManagerOpts: packageManagerOpts{
 		AutoConfirmOpt: "",
 		QuietOpt:       "-q",
-	}
+	},
 }
 
-// aptitude // apt-get // apt
-type aptitude struct{}
-
-func (apt *aptitude) getExecutable() string {
-	return "apt-get"
-}
-
-func (apt *aptitude) getSubCommands() *packageManagerArgs {
-	return &packageManagerArgs{
+// Aptitude // apt-get // apt is for debian based distros
+var Aptitude packageManager = packageManager{
+	Name: "apt-get",
+	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "install",
 		UninstallArg: "remove",
 		UpdateArg:    "install",
 		UpgradeArg:   "upgrade",
-	}
-}
-
-func (apt *aptitude) getCommandOptions() *packageManagerOpts {
-	return &packageManagerOpts{
+	},
+	packageManagerOpts: packageManagerOpts{
 		AutoConfirmOpt: "-y",
 		QuietOpt:       "-qq",
-	}
+	},
 }
 
-// dnf
-type dnf struct{}
-
-func (dnf *dnf) getExecutable() string {
-	return "dnf"
-}
-
-func (dnf *dnf) getSubCommands() *packageManagerArgs {
-	return &packageManagerArgs{
+// Dnf is for RPM / Redhat-like distros
+var Dnf packageManager = packageManager{
+	Name: "dnf",
+	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "install",
 		UninstallArg: "remove",
 		UpdateArg:    "upgrade",
 		UpgradeArg:   "upgrade",
-	}
-}
-
-func (dnf *dnf) getCommandOptions() *packageManagerOpts {
-	return &packageManagerOpts{
+	},
+	packageManagerOpts: packageManagerOpts{
 		AutoConfirmOpt: "-y",
 		QuietOpt:       "-q",
-	}
+	},
 }
 
-// pacman
-type pacman struct{}
-
-func (pacman *pacman) getExecutable() string {
-	return "pacman"
-}
-
-func (pacman *pacman) getSubCommands() *packageManagerArgs {
-	return &packageManagerArgs{
+// Pacman is for arch
+var Pacman packageManager = packageManager{
+	Name: "pacman",
+	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "-S",
 		UninstallArg: "-R",
 		UpdateArg:    "-Syu",
 		UpgradeArg:   "-Syu",
-	}
-}
-
-func (pacman *pacman) getCommandOptions() *packageManagerOpts {
-	return &packageManagerOpts{
+	},
+	packageManagerOpts: packageManagerOpts{
 		AutoConfirmOpt: "--noconfirm",
 		QuietOpt:       "--quiet",
-	}
+	},
 }
 
-// zypper
-type zypper struct{}
-
-func (zypper *zypper) getExecutable() string {
-	return "zypper"
-}
-
-func (zypper *zypper) getSubCommands() *packageManagerArgs {
-	return &packageManagerArgs{
+// Zypper is for Suse
+var Zypper packageManager = packageManager{
+	Name: "zypper",
+	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "in",
 		UninstallArg: "rm",
 		UpdateArg:    "in",
 		UpgradeArg:   "up",
-	}
-}
-
-func (zypper *zypper) getCommandOptions() *packageManagerOpts {
-	return &packageManagerOpts{
+	},
+	packageManagerOpts: packageManagerOpts{
 		AutoConfirmOpt: "--non-interactive",
 		QuietOpt:       "--quiet",
-	}
+	},
 }

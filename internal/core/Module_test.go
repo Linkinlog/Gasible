@@ -12,10 +12,9 @@ type MockModule struct {
 	config core.ModuleConfig
 }
 
-func (mock MockModule) GetModuleDeps() []string                    { return mock.deps }
 func (mock MockModule) ParseConfig(_ map[string]interface{}) error { return nil }
 func (mock MockModule) Config() core.ModuleConfig                  { return mock.config }
-func (mock MockModule) Name() string                               { return mock.name }
+func (mock MockModule) GetName() string                            { return mock.name }
 func (mock MockModule) TearDown() error                            { return nil }
 func (mock MockModule) Setup() error                               { return nil }
 func (mock MockModule) Update() error                              { return nil }
@@ -43,7 +42,7 @@ func TestRegisterAndGetNewModule(t *testing.T) {
 	// Register
 	moduleRegistry.Register(testCase.TestModule)
 	// Confirm it is there now
-	_, err = moduleRegistry.Get(testCase.TestModule.Name())
+	_, err = moduleRegistry.Get(testCase.TestModule.GetName())
 	if err != nil {
 		t.Fatal(err)
 	} else if _, ok := testCase.TestModule.(MockModule); !ok {

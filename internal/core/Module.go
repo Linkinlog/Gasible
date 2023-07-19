@@ -18,7 +18,7 @@ type moduleAction func(Module) error
 type Module interface {
 	ParseConfig(map[string]interface{}) error
 	Config() ModuleConfig
-	Name() string
+	GetName() string
 	Setup() error
 	TearDown() error
 	Update() error
@@ -58,7 +58,7 @@ func (mr *Registry) Get(mod string) (Module, error) {
 
 // Register adds a new module to an existing registry.
 func (mr *Registry) Register(mod Module) {
-	mr.Modules[mod.Name()] = mod
+	mr.Modules[mod.GetName()] = mod
 }
 
 // RunSetup Runs the Setup method on each Registry.Modules

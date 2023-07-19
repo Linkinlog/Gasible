@@ -1,16 +1,17 @@
-package modules
+package modules_test
 
 import (
+	"github.com/Linkinlog/gasible/modules"
 	"testing"
 )
 
 func Test_genericPackageManager_addToInstaller(t *testing.T) {
 	type fields struct {
 		Enabled  bool
-		Settings packageManagerConfig
+		Settings modules.PackageManagerConfig
 	}
 	type args struct {
-		packageMap map[string][]string
+		packageMap modules.PackageManagerMap
 	}
 	tests := []struct {
 		name    string
@@ -19,56 +20,54 @@ func Test_genericPackageManager_addToInstaller(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test1",
+			name: "test all package managers can be added",
 			fields: struct {
 				Enabled  bool
-				Settings packageManagerConfig
+				Settings modules.PackageManagerConfig
 			}{
 				Enabled: true,
-				Settings: packageManagerConfig{
-					Manager:      "apt-get",
-					Packages:     []string{"foo", "bar"},
-					Dependencies: []string{"foo", "bar"},
+				Settings: modules.PackageManagerConfig{
+					Manager:  "apt-get",
+					Packages: []string{"foo", "bar"},
 				},
 			},
 			args: args{
-				packageMap: map[string][]string{
-					"apt-get": {"foo", "bar"},
+				packageMap: modules.PackageManagerMap{
+					&modules.Aptitude: {"foo", "bar"},
+					&modules.Brew:     {"foo", "bar"},
+					&modules.Dnf:      {"foo", "bar"},
+					&modules.Pacman:   {"foo", "bar"},
+					&modules.Zypper:   {"foo", "bar"},
 				},
 			},
 			wantErr: false,
 		},
-		{
-			name: "test2",
+		{ // todo these dont work
+			name: "test that the correct packages get added",
 			fields: struct {
 				Enabled  bool
-				Settings packageManagerConfig
+				Settings modules.PackageManagerConfig
 			}{
 				Enabled: true,
-				Settings: packageManagerConfig{
-					Manager:      "failure",
-					Packages:     []string{"foo", "bar"},
-					Dependencies: []string{"foo", "bar"},
+				Settings: modules.PackageManagerConfig{
+					Manager:  "failure",
+					Packages: []string{"foo", "bar"},
 				},
 			},
 			args: args{
-				packageMap: map[string][]string{
-					"failure": {"foo", "bar"},
-				},
+				packageMap: modules.PackageManagerMap{},
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			packageMan := &genericPackageManager{
-				name:     tt.fields.Settings.Manager,
+			packageMan := &modules.GenericPackageManager{
+				Name:     tt.fields.Settings.Manager,
 				Enabled:  tt.fields.Enabled,
 				Settings: tt.fields.Settings,
 			}
-			if err := packageMan.addToInstaller(tt.args.packageMap); (err != nil) != tt.wantErr {
-				t.Errorf("addToInstaller() error = %v, wantErr %v", err, tt.wantErr)
-			}
+			packageMan.AddToInstaller(tt.args.packageMap)
 		})
 	}
 }

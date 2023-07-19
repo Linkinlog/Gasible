@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/Linkinlog/gasible/internal/core"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +23,5 @@ var (
 
 // Execute executes the root command.
 func Execute() error {
-	err := core.CurrentState.ReadConfigFromFile("")
-	if err != nil {
-		panic(err)
-	}
 	return rootCmd.Execute()
 }

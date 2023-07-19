@@ -10,6 +10,10 @@ var teardown = &cobra.Command{
 	Short: "Teardown all modules.",
 	Long:  `This will run the teardown method on all modules, this can result in data/package loss.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		err := core.CurrentState.ReadConfigFromFile("")
+		if err != nil {
+			return err
+		}
 		return core.CurrentState.Config.ModuleRegistry.RunTeardown()
 	},
 }
