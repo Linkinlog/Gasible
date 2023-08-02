@@ -5,16 +5,13 @@ const configFilename = "config.yml"
 
 type App struct {
 	Config         *Config
-	Executor       cmdExecutor
-	ModuleRegistry *Registry
-	System         *CurrentSystem
+	ModuleRegistry *registry
 }
 
+// New returns a pointer to an application
 func New() *App {
 	return &App{
 		Config:         NewConfig(),
-		System:         NewSystem(),
-		ModuleRegistry: NewRegistry(),
-		Executor:       &NormalRunner{},
+		ModuleRegistry: newRegistry(),
 	}
 }

@@ -6,17 +6,15 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/Linkinlog/gasible/internal/app"
+	"golang.org/x/crypto/ssh"
+	"gopkg.in/yaml.v3"
 	"log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path"
 	"strings"
-	"time"
-
-	"github.com/Linkinlog/gasible/internal/app"
-	"golang.org/x/crypto/ssh"
-	"gopkg.in/yaml.v3"
 )
 
 type github struct {
@@ -27,10 +25,9 @@ type github struct {
 }
 
 type githubSettings struct {
-	token       string
+	token       string `yaml:"-"`
 	TokenEnvKey string `yaml:"token-env-key"`
-	SshKeyPath  string `yaml:"ssh-key-path"`
-	SshKeyName  string `yaml:"ssh-key-name"`
+	SshKeyPath  string `yaml:"-"`
 }
 
 func init() {
@@ -39,18 +36,11 @@ func init() {
 		Enabled:  true,
 		Settings: githubSettings{},
 	})
+	ToBeInstalled[&brew] = []string{"gh"}
 }
 
 func (gh *github) SetApp(app *app.App) {
 	gh.application = app
-	// TODO handle this in init like ToBeRegistered
-	installer, err := app.ModuleRegistry.GetModule("GenericPackageManager")
-	if err != nil {
-		panic(err)
-	}
-	installer.(*GenericPackageManager).AddToInstaller(PackageManagerMap{
-		&Brew: {"gh"},
-	})
 }
 
 func (gh *github) GetName() string { return gh.name }
@@ -85,18 +75,18 @@ func (gh *github) TearDown() error {
 	if err != nil {
 		return err
 	}
-	uninstallGH(gh.application)
+	gh.uninstallGH()
 	return nil
 }
 
 func (gh *github) Setup() error {
-	installGH(gh.application)
-	if gh.Settings.SshKeyName == "" {
-		gh.Settings.SshKeyName = "Gasible Created - " + time.DateTime
+	// TODO figure out other package managers
+	if _, err := exec.LookPath("apt-get"); err == nil {
+		gh.installGH()
 	}
-	if gh.Settings.TokenEnvKey == "" {
-		gh.getTokenFromUser()
-	}
+	// else check if gh is installed, so we don't explode if it's not
+
+	gh.getTokenFromUser()
 	// use token to login
 	err := gh.authLogin()
 	if err != nil {
@@ -104,7 +94,7 @@ func (gh *github) Setup() error {
 	}
 	// generate / prompt for the ssh key,
 	// then add the ssh key to gh
-	sshErr := gh.addSSHKey(gh.Settings.SshKeyName)
+	sshErr := gh.addSSHKey("Gasible-Generated-Key")
 	if sshErr != nil {
 		return sshErr
 	}
@@ -112,12 +102,17 @@ func (gh *github) Setup() error {
 }
 
 func (gh *github) Update() error {
-	err := upgradeGH(gh.application)
+	err := gh.upgradeGH()
 	if err != nil {
 		return err
 	} else {
 		return nil
 	}
+}
+
+func (gh *github) system() *SysCall {
+	sysCallMod := gh.application.ModuleRegistry.GetModule("SysCall")
+	return sysCallMod.(*SysCall)
 }
 
 func (gh *github) getTokenFromUser() {
@@ -138,7 +133,7 @@ func (gh *github) getTokenFromUser() {
 
 func (gh *github) authLogin() error {
 	// use token to run `gh auth login --with-token`
-	resp, err := gh.application.System.ExecCombinedWithInput(app.NormalRunner{}, "gh", []string{"auth", "login", "--with-token"}, gh.Settings.token)
+	resp, err := gh.system().ExecWithInput("gh", []string{"auth", "login", "--with-token"}, gh.Settings.token, false)
 	if err != nil {
 		return fmt.Errorf("authLogin error: %w \n more details: %s", err, string(resp))
 	} else {
@@ -147,17 +142,15 @@ func (gh *github) authLogin() error {
 }
 
 func (gh *github) authLogout() error {
-	resp, err := gh.application.System.ExecCombinedOutput(app.NormalRunner{}, "gh", []string{"auth", "logout", "--hostname", "github.com"})
+	resp, err := gh.system().Exec("gh", []string{"auth", "logout", "--hostname", "github.com"}, false)
 	if err != nil {
 		log.Fatal(resp, err)
 		return err
 	}
 	return nil
-	// return gh.application.System.ExecRun(app.NormalRunner{}, "gh", []string{"auth", "logout", "--hostname", "github.com"})
 }
 
 func (gh *github) addSSHKey(title string) error {
-
 	// create a new ssh key or specify an existing one.
 	if gh.Settings.SshKeyPath == "" {
 		keyPath, sshErr := generateSSHKeys("github-gasible")
@@ -167,24 +160,17 @@ func (gh *github) addSSHKey(title string) error {
 		gh.Settings.SshKeyPath = keyPath + ".pub"
 	}
 	// use it with `gh ssh-key add "FILEPATH" --title "TITLE"`.
-	out, err := gh.application.System.ExecCombinedOutput(
-		app.NormalRunner{},
-		"gh",
-		[]string{"ssh-key", "add", gh.Settings.SshKeyPath, "--title", title},
-	)
+	out, err := gh.system().Exec("gh", []string{"ssh-key", "add", gh.Settings.SshKeyPath, "--title", title}, false)
 	if err != nil {
-		return errors.Join(err, errors.New(string(out)))
+		var outputErr = errors.New(string(out))
+		return errors.Join(err, outputErr)
 	} else {
 		return nil
 	}
 }
 
 func (gh *github) getSSHKeyIDs(sshKeyName string) ([]string, error) {
-	out, err := gh.application.System.ExecCombinedOutput(
-		app.NormalRunner{},
-		"gh",
-		[]string{"ssh-key", "list"},
-	)
+	out, err := gh.system().Exec("gh", []string{"ssh-key", "list"}, false)
 	if err != nil {
 		return []string{string(out)}, err
 	}
@@ -206,12 +192,12 @@ func (gh *github) getSSHKeyIDs(sshKeyName string) ([]string, error) {
 }
 
 func (gh *github) removeSSHKeys() error {
-	ids, err := gh.getSSHKeyIDs("Gasible-Created-Key")
+	ids, err := gh.getSSHKeyIDs("Gasible-Generated-Key")
 	if err != nil {
 		return err
 	}
 	for _, id := range ids {
-		out, runErr := gh.application.System.ExecCombinedOutput(app.NormalRunner{}, "gh", []string{"ssh-key", "delete", id, "-y"})
+		out, runErr := gh.system().Exec("gh", []string{"ssh-key", "delete", id, "-y"}, false)
 		if runErr != nil {
 			return errors.Join(runErr, errors.New(string(out)))
 		}
@@ -219,51 +205,43 @@ func (gh *github) removeSSHKeys() error {
 	return nil
 }
 
-func installGH(application *app.App) {
-	// TODO use GenericPakcageManager
-	if _, err := exec.LookPath("apt-get"); err != nil {
-		if application.System.Name != "darwin" {
-			panic("only apt-get works for now") // TODO
-		}
-	}
-	runner := app.SudoRunner{}
-
-	// Step 1: Check if curl is installed, if not install it
+func (gh *github) installGH() {
+	// Step 1: Check if curl is installed, if not Install it
 	if _, err := exec.LookPath("curl"); err != nil {
-		// curl is not installed, install it
-		if err := application.System.ExecRun(&runner, "apt-get", []string{"update"}); err != nil {
-			_, err := fmt.Fprintf(os.Stderr, "Failed to update apt package list: %v\n", err)
-			if err != nil {
+		// curl is not installed, Install it
+		if _, execErr := gh.system().Exec("apt-get", []string{"update"}, true); execErr != nil {
+			_, printErr := fmt.Fprintf(os.Stderr, "Failed to Update apt package list: %v\n", execErr)
+			if printErr != nil {
 				return
 			}
 			return
 		}
 
-		if err := application.System.ExecRun(&runner, "apt-get", []string{"install", "curl", "-y"}); err != nil {
-			_, err := fmt.Fprintf(os.Stderr, "Failed to install curl: %v\n", err)
-			if err != nil {
+		if _, execErr := gh.system().Exec("apt-get", []string{"install", "curl", "-y"}, true); execErr != nil {
+			_, printErr := fmt.Fprintf(os.Stderr, "Failed to Install curl: %v\n", execErr)
+			if printErr != nil {
 				return
 			}
 			return
 		}
 	}
 
-	// Step 2: Fetch the GPG key for the GitHub CLI's package repository and install it
+	// Step 2: Fetch the GPG key for the GitHub CLI's package repository and Install it
 	gpgURL := "https://cli.github.com/packages/githubcli-archive-keyring.gpg"
 	command := fmt.Sprintf(`curl -fsSL %s | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg`, gpgURL)
-	if err := application.System.ExecRun(&runner, "sh", []string{"-c", command}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to install GPG key: %v\n", err)
+	if _, keyRingInstallErr := gh.system().Exec("sh", []string{"-c", command}, false); keyRingInstallErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to Install GPG key: %v\n", keyRingInstallErr)
 		if err != nil {
 			return
 		}
 		return
 	}
 
-	// Step 3: Adds the GitHub CLI's package repository to apt's list of package sources
+	// Step 3: Adds the GitHub CLI's package repository to aptitude's list of package sources
 	command = `deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main`
 	command = fmt.Sprintf(`echo "%s" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null`, command)
-	if err := application.System.ExecRun(&runner, "sh", []string{"-c", command}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to add GitHub CLI's package repository: %v\n", err)
+	if _, sourcesInstallErr := gh.system().Exec("sh", []string{"-c", command}, false); sourcesInstallErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to add GitHub CLI's package repository: %v\n", sourcesInstallErr)
 		if err != nil {
 			return
 		}
@@ -271,8 +249,8 @@ func installGH(application *app.App) {
 	}
 
 	// Step 4: Update the apt package lists again
-	if err := application.System.ExecRun(&runner, "apt-get", []string{"update"}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to update apt package list: %v\n", err)
+	if _, updateErr := gh.system().Exec("apt-get", []string{"update"}, true); updateErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to Update apt package list: %v\n", updateErr)
 		if err != nil {
 			return
 		}
@@ -280,21 +258,20 @@ func installGH(application *app.App) {
 	}
 
 	// Step 5: Install the GitHub CLI
-	if err := application.System.ExecRun(&runner, "apt-get", []string{"install", "gh", "-y"}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to install GitHub CLI: %v\n", err)
+	if _, installErr := gh.system().Exec("apt-get", []string{"install", "gh", "-y"}, true); installErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to Install GitHub CLI: %v\n", installErr)
 		if err != nil {
 			return
 		}
 	}
 
-	fmt.Println("Successfully installed GitHub CLI.")
+	log.Println("Successfully installed GitHub CLI.")
 }
 
-func uninstallGH(application *app.App) {
-	runner := app.SudoRunner{}
+func (gh *github) uninstallGH() {
 	// Step 1: Uninstall gh
-	if err := application.System.ExecRun(&runner, "apt-get", []string{"remove", "gh", "-y"}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to uninstall GitHub CLI: %v\n", err)
+	if _, removeErr := gh.system().Exec("apt-get", []string{"remove", "gh", "-y"}, true); removeErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to Uninstall GitHub CLI: %v\n", removeErr)
 		if err != nil {
 			return
 		}
@@ -302,8 +279,8 @@ func uninstallGH(application *app.App) {
 	}
 
 	// Step 2: Remove the repository from the list of sources
-	if err := application.System.ExecRun(&runner, "rm", []string{"/etc/apt/sources.list.d/github-cli.list"}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to remove the repository from sources list: %v\n", err)
+	if _, sourcesRemoveErr := gh.system().Exec("rm", []string{"/etc/apt/sources.list.d/github-cli.list"}, true); sourcesRemoveErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to remove the repository from sources list: %v\n", sourcesRemoveErr)
 		if err != nil {
 			return
 		}
@@ -311,8 +288,8 @@ func uninstallGH(application *app.App) {
 	}
 
 	// Step 3: Remove the keyring
-	if err := application.System.ExecRun(&runner, "rm", []string{"/usr/share/keyrings/githubcli-archive-keyring.gpg"}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to remove the keyring: %v\n", err)
+	if _, keyringRemoveErr := gh.system().Exec("rm", []string{"/usr/share/keyrings/githubcli-archive-keyring.gpg"}, true); keyringRemoveErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to remove the keyring: %v\n", keyringRemoveErr)
 		if err != nil {
 			return
 		}
@@ -320,33 +297,32 @@ func uninstallGH(application *app.App) {
 	}
 
 	// Step 4: Update the apt package lists after the changes
-	if err := application.System.ExecRun(&runner, "apt-get", []string{"update"}); err != nil {
-		_, err := fmt.Fprintf(os.Stderr, "Failed to update apt package list: %v\n", err)
+	if _, aptUpdateErr := gh.system().Exec("apt-get", []string{"update"}, true); aptUpdateErr != nil {
+		_, err := fmt.Fprintf(os.Stderr, "Failed to Update apt package list: %v\n", aptUpdateErr)
 		if err != nil {
 			return
 		}
 		return
 	}
 
-	fmt.Println("Successfully uninstalled GitHub CLI and cleaned up.")
-
+	log.Println("Successfully uninstalled GitHub CLI and cleaned up.")
 }
 
-func upgradeGH(application *app.App) error {
+func (gh *github) upgradeGH() error {
 	// Check if gh is installed.
-	_, err := application.System.ExecCombinedOutput(application.Executor, "type", []string{"-p", "gh"})
+	_, err := gh.system().Exec("type", []string{"-p", "gh"}, false)
 	if err != nil {
 		return fmt.Errorf("gh is not installed, cannot upgrade: %v", err)
 	}
 
 	// Update package lists for upgrades and installations
-	err = application.System.ExecRun(application.Executor, "sudo", []string{"apt", "update"})
+	_, err = gh.system().Exec("sudo", []string{"apt", "update"}, false)
 	if err != nil {
-		return fmt.Errorf("error running sudo apt update: %v", err)
+		return fmt.Errorf("error running sudo apt Update: %v", err)
 	}
 
 	// Upgrade gh
-	err = application.System.ExecRun(application.Executor, "sudo", []string{"apt", "upgrade", "gh", "-y"})
+	_, err = gh.system().Exec("sudo", []string{"apt", "upgrade", "gh", "-y"}, false)
 	if err != nil {
 		return fmt.Errorf("error running sudo apt upgrade gh -y: %v", err)
 	}
@@ -373,7 +349,7 @@ func generateSSHKeys(fileName string) (string, error) {
 	}
 
 	publicKeyBytes := ssh.MarshalAuthorizedKey(pub)
-	err = os.WriteFile(keyPath+".pub", publicKeyBytes, 0644)
+	err = os.WriteFile(keyPath+".pub", publicKeyBytes, 0600)
 	if err != nil {
 		return "", err
 	}

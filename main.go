@@ -12,9 +12,8 @@ package main
 import (
 	"github.com/Linkinlog/gasible/cmd"
 	"github.com/Linkinlog/gasible/internal/app"
-	"github.com/Linkinlog/gasible/modules"
-	_ "github.com/Linkinlog/gasible/modules"
-	"log"
+	"github.com/Linkinlog/gasible/internal/modules"
+	_ "github.com/Linkinlog/gasible/internal/modules"
 )
 
 // main starts everything off, now handled by Cobra.
@@ -24,8 +23,8 @@ func main() {
 		module.SetApp(newApp)
 		newApp.ModuleRegistry.Register(module)
 	}
-	err := cmd.ExecuteApplication(newApp)
-	if err != nil {
-		log.Fatalf("Error: %s", err)
-	}
+	_ = cmd.ExecuteApplication(newApp)
+	//if err != nil {
+	//	log.Fatalf("Error: %s", err)
+	//}
 }

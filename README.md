@@ -10,9 +10,18 @@ Welcome to **Gasible**, the ultimate solution for automating the setup of your l
 - Package management module for ease of use, using your favorite manager
 
 ## Installation
+- Through Go:
 ```bash
-go install github.com/Linkinlog/gasible
+$ go install github.com/Linkinlog/gasible@latest
 ```
+- Through cloning and building:
+```bash
+$ git clone https://github.com/Linkinlog/Gasible
+$ cd gasible
+$ make
+$ ./gasible
+```
+- Through the binary in our [releases](https://github.com/Linkinlog/Gasible/releases)
 
 ## Usage
 ```bash
@@ -26,7 +35,8 @@ gasible [command]
 - `teardown`: Runs the teardown method on all modules
 - `generate`: Generates a new config, overwriting the old
 
-## Configuration
+For more detail on what each Module does, please check out our Wiki: (TODO)
+## Usage
 
 Gasible uses a config file named `config.yml` for customization.
 You can specify your own package manager, packages, and all the modules' configuration in this file.
@@ -38,20 +48,22 @@ Below is the default config featuring all the supported options and some explana
 ---
 # Package manager config
 GenericPackageManager:
-  enabled: true
+  enabled: true # dictates if this module gets ran
   settings:
-    manager: "" # Package manager to use (must be installed)
-    packages: [] # Packages to install via the manager
+    manager: "apt-get" # which package manager to use for package/dependency management
+    packages: ["cowsay", "lolcat"] # (optional) array of packages to install when `Setup()` is ran
 GitHub:
-  enabled: true
+  enabled: true # dictates if this module gets ran
   settings:
-    token-env-key: "" # The env variable that holds your Github personal access token
-    ssh-key-path: ""  # The path for the ssh key to add/use to/for Github
-    ssh-key-name: ""  # The name to give the ssh key
+    token-env-key: "GASIBLE_GH" # (optional) the environment variable containing your Github personal access token
+SysCall:
+  enabled: true # dictates if this module gets ran, this should always be true
+  settings: {}
 ```
 
 ## Contribution
 We welcome contributions to Gasible. If you find a bug or want to request a new feature, please open an issue. If you want to contribute code, please fork the repository and open a pull request. Our community is always looking for ways to improve and make Gasible even better.
+Also check out the CONTRIBUTING.md for extra info
 
 ## License
 Gasible is licensed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).

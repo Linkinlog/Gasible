@@ -1,0 +1,9 @@
+- Oddities to note (If unfamiliar with Go)
+  - `Init()`, each module needs an `Init()` function for adding itself to the registered list, this is a function that is called as soon as the program is executed via the import in `main.go` that starts with `_`
+- How to create a new module
+  - GithubCLI is a good example
+  - Create a new Go file in the `modules` directory
+  - Create a struct that implements the `Module` interface
+  - Add an `init()` function that adds a pointer of your module with any defaults needed
+  - To install dependencies, add them to the package map `ToBeInstalled`. Check the `init()` function in `GithubCLI` for an example
+  - Profit(?)

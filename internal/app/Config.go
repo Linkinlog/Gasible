@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/Linkinlog/gasible/internal"
 	"os"
 	"path/filepath"
 )
@@ -27,7 +28,7 @@ func createAndOrGetConfigPath() (string, error) {
 	// Find home directory.
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return "", ErrorAs("createAndOrGetConfigPath", err)
+		return "", internal.ErrorAs("createAndOrGetConfigPath", err)
 	}
 
 	// Append the AppConfig file directory to the home directory path
@@ -36,9 +37,9 @@ func createAndOrGetConfigPath() (string, error) {
 
 	// If the directory doesn't exist, we create it
 	if os.IsNotExist(err) {
-		errDir := os.MkdirAll(confDir, 0755)
+		errDir := os.MkdirAll(confDir, 0750)
 		if errDir != nil {
-			return "", ErrorAs("createAndOrGetConfigPath", err)
+			return "", internal.ErrorAs("createAndOrGetConfigPath", err)
 		}
 	}
 
@@ -49,9 +50,9 @@ func createAndOrGetConfigPath() (string, error) {
 
 	// If the config doesn't exist, we create it
 	if os.IsNotExist(err) {
-		_, errDir := os.Create(confFilePath)
+		_, errDir := os.Create(filepath.Clean(confFilePath))
 		if errDir != nil {
-			return "", ErrorAs("createAndOrGetConfigPath", err)
+			return "", internal.ErrorAs("createAndOrGetConfigPath", err)
 		}
 	}
 
