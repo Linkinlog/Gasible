@@ -3,7 +3,7 @@ package modules
 import (
 	"errors"
 	"fmt"
-	"github.com/Linkinlog/gasible/internal/core"
+	"github.com/Linkinlog/gasible/internal/app"
 	"gopkg.in/yaml.v3"
 	"log"
 )
@@ -17,6 +17,7 @@ type GenericPackageManager struct {
 	Enabled           bool
 	Settings          PackageManagerConfig
 	PackageManagerMap PackageManagerMap
+	Application       *app.App
 }
 
 type PackageManagerConfig struct {
@@ -51,7 +52,7 @@ type packageManagerOpts struct {
 // init
 // This should really just handle registering the module in the registry.
 func init() {
-	core.ModuleRegistry.Register(&GenericPackageManager{
+	ToBeRegistered = append(ToBeRegistered, &GenericPackageManager{
 		Name:              "GenericPackageManager",
 		Enabled:           true,
 		Settings:          PackageManagerConfig{},
@@ -61,27 +62,40 @@ func init() {
 
 // Interface methods
 
+func (packageMan *GenericPackageManager) SetApp(app *app.App) {
+	packageMan.Application = app
+}
+
 func (packageMan *GenericPackageManager) Setup() error {
+	if len(packageMan.Settings.Packages) < 1 {
+		return nil
+	}
 	packageMan.validateAndAddModulePackages()
-	return managePackages(packageMan.manager(), packageMan.Settings.Packages, "install")
+	return managePackages(packageMan, "install")
 }
 
 func (packageMan *GenericPackageManager) TearDown() error {
+	if len(packageMan.Settings.Packages) < 1 {
+		return nil
+	}
 	packageMan.validateAndAddModulePackages()
-	return managePackages(packageMan.manager(), packageMan.Settings.Packages, "uninstall")
+	return managePackages(packageMan, "uninstall")
 }
 
 func (packageMan *GenericPackageManager) Update() error {
+	if len(packageMan.Settings.Packages) < 1 {
+		return nil
+	}
 	packageMan.validateAndAddModulePackages()
-	return managePackages(packageMan.manager(), packageMan.Settings.Packages, "update")
+	return managePackages(packageMan, "update")
 }
 
 func (packageMan *GenericPackageManager) GetName() string {
 	return packageMan.Name
 }
 
-func (packageMan *GenericPackageManager) Config() core.ModuleConfig {
-	return core.ModuleConfig{
+func (packageMan *GenericPackageManager) Config() app.ModuleConfig {
+	return app.ModuleConfig{
 		Enabled:  packageMan.Enabled,
 		Settings: packageMan.Settings,
 	}
@@ -117,13 +131,13 @@ func (packageMan *GenericPackageManager) AddToInstaller(packageMap PackageManage
 // Helper functions
 
 func (packageMan *GenericPackageManager) manager() *packageManager {
-	moduleSettings, err := core.ModuleRegistry.Get("GenericPackageManager")
+	moduleSettings, err := packageMan.Application.ModuleRegistry.GetModule("GenericPackageManager")
 	if err != nil || moduleSettings == nil {
 		log.Fatalf("failed to get GenericPackageManager module settings")
 		return nil
 	}
 
-	packageMgr, err := determinePackageMgr(moduleSettings.Config().Settings.(PackageManagerConfig).Manager)
+	packageMgr, err := determinePackageMgr(moduleSettings.Config().Settings.(PackageManagerConfig).Manager, packageMan.Application)
 	if err != nil {
 		log.Fatal(err)
 		return nil
@@ -137,8 +151,11 @@ func (packageMan *GenericPackageManager) validateAndAddModulePackages() {
 	packageMan.Settings.Packages = append(packageMan.Settings.Packages, packagesForCurrentManager...)
 }
 
-func managePackages(packageMgr *packageManager, packages []string, operation string) (err error) {
-	// Get the appropriate command argument based on the operation type.
+func managePackages(packageMan *GenericPackageManager, operation string) (err error) {
+	packages := packageMan.Settings.Packages
+	packageMgr := packageMan.manager()
+	application := packageMan.Application
+	// GetModule the appropriate command argument based on the operation type.
 	var commandArg string
 	switch operation {
 	case "install":
@@ -153,25 +170,23 @@ func managePackages(packageMgr *packageManager, packages []string, operation str
 	packagesAndArgs := append(formattedCommand, packages...)
 	log.Printf("Attempting to use %s to %s packages: %s...\n", packageMgr.getExecutable(), operation, packages)
 
-	out, err := core.CurrentState.System.Exec(packageMgr.getExecutable(), packagesAndArgs)
+	out, err := application.System.ExecCombinedOutput(application.Executor, packageMgr.getExecutable(), packagesAndArgs)
 	if err != nil {
 		return errors.Join(err, errors.New(string(out)))
 	}
 	log.Printf("%sPackage %s finished.\n", string(out), operation)
+	application.Executor = app.NormalRunner{}
 	return
 }
 
-func determinePackageMgr(manager string) (packageMgr *packageManager, err error) {
+func determinePackageMgr(manager string, application *app.App) (packageMgr *packageManager, err error) {
 	var ok bool
-	os := core.CurrentState.System.Name
+	os := application.System.Name
 	if os == "darwin" {
-		// Failsafe as we only support brew on Mac.
-		// Also, brew doesn't support being ran as sudo.
-		// TODO maybe?
 		packageMgr, ok = supportedPackageManagers["brew"]
 	} else {
 		packageMgr, ok = supportedPackageManagers[manager]
-		core.CurrentState.System.Runner = core.SudoRunner{}
+		application.Executor = app.SudoRunner{} // Apt and such need sudo
 	}
 	if ok {
 		return packageMgr, nil
@@ -218,7 +233,7 @@ func (p *packageManager) getCommandOptions() *packageManagerOpts {
 }
 
 // Brew is the package manager for Mac
-var Brew packageManager = packageManager{
+var Brew = packageManager{
 	Name: "brew",
 	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "install",
@@ -233,7 +248,7 @@ var Brew packageManager = packageManager{
 }
 
 // Aptitude // apt-get // apt is for debian based distros
-var Aptitude packageManager = packageManager{
+var Aptitude = packageManager{
 	Name: "apt-get",
 	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "install",
@@ -248,7 +263,7 @@ var Aptitude packageManager = packageManager{
 }
 
 // Dnf is for RPM / Redhat-like distros
-var Dnf packageManager = packageManager{
+var Dnf = packageManager{
 	Name: "dnf",
 	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "install",
@@ -263,7 +278,7 @@ var Dnf packageManager = packageManager{
 }
 
 // Pacman is for arch
-var Pacman packageManager = packageManager{
+var Pacman = packageManager{
 	Name: "pacman",
 	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "-S",
@@ -278,7 +293,7 @@ var Pacman packageManager = packageManager{
 }
 
 // Zypper is for Suse
-var Zypper packageManager = packageManager{
+var Zypper = packageManager{
 	Name: "zypper",
 	packageManagerArgs: packageManagerArgs{
 		InstallArg:   "in",
