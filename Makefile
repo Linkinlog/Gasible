@@ -12,13 +12,13 @@ clean:
 	rm -f $(BINARY)
 
 lint:
-	command golangci-lint run
+	golangci-lint run
 
 fmt:
-	command gofmt -d -w $(PWD)
+	gofmt -d -w $(PWD)
 
 test:
-	command go test ./... -v
+	go test ./... -v
 
 neat: lint fmt
 

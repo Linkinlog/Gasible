@@ -1,16 +1,9 @@
 package cmd
 
 import (
+	"github.com/Linkinlog/gasible/internal/app"
 	"github.com/spf13/cobra"
 )
-
-func init() {
-	rootCmd.AddCommand(config)
-	rootCmd.AddCommand(setupCmd)
-	rootCmd.AddCommand(updateCmd)
-	rootCmd.AddCommand(teardown)
-	rootCmd.AddCommand(versionCmd)
-}
 
 var (
 	rootCmd = &cobra.Command{
@@ -21,7 +14,11 @@ var (
 	}
 )
 
-// Execute executes the root command.
-func Execute() error {
+func ExecuteApplication(app *app.App) error {
+	newVersionCmd()
+	newWriteCurrent(app)
+	newSetupCmd(app)
+	newUpdateCmd(app)
+	newTeardown(app)
 	return rootCmd.Execute()
 }

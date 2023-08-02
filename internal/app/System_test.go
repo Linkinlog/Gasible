@@ -1,4 +1,4 @@
-package core_test
+package app_test
 
 import (
 	"fmt"
@@ -6,22 +6,22 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/Linkinlog/gasible/internal/core"
+	"github.com/Linkinlog/gasible/internal/app"
 )
 
 type InstallerTestCase struct {
-	system *core.System
+	system *app.CurrentSystem
 	Name   string
 }
 
 type MockCommandRunner struct{}
 
-func (m MockCommandRunner) Command(name string, arg ...string) *exec.Cmd {
+func (m MockCommandRunner) Command(name string, arg ...string) (*exec.Cmd, error) {
 	cmdString := []string{"-test.run=TestSystemMock", "--", name}
 	cmdString = append(cmdString, arg...)
 	cmd := exec.Command(os.Args[0], cmdString...)
 	cmd.Env = []string{"RUN_SYSTEM_MOCK=1"}
-	return cmd
+	return cmd, nil
 }
 
 func TestSystemMock(t *testing.T) {
@@ -36,17 +36,15 @@ func TestSystemMock(t *testing.T) {
 }
 
 func TestSystemExec(t *testing.T) {
-	mockTestRunner := MockCommandRunner{}
-	system := core.System{
-		Name:   "TestOs",
-		Runner: mockTestRunner,
+	system := &app.CurrentSystem{
+		Name: "TestOs",
 	}
 	testCase := InstallerTestCase{
-		&system,
+		system,
 		"TestInstallerWithDefaults",
 	}
 	t.Run(testCase.Name, func(t *testing.T) {
-		out, err := testCase.system.Exec("", []string{})
+		out, err := testCase.system.ExecCombinedOutput(MockCommandRunner{}, "", []string{})
 		expectedRes := "mocking passed"
 		if err != nil {
 			t.Fatalf("Failed installer test, err: %s", err.Error())

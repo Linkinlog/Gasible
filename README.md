@@ -24,8 +24,7 @@ gasible [command]
 - `setup`: Runs the setup method on all modules
 - `update`: Runs the update method on all modules
 - `teardown`: Runs the teardown method on all modules
-- `config`: Shows the configuration commands
-  - `generate`: Generates a new config
+- `generate`: Generates a new config, overwriting the old
 
 ## Configuration
 
@@ -39,9 +38,16 @@ Below is the default config featuring all the supported options and some explana
 ---
 # Package manager config
 GenericPackageManager:
-  package-manager: "apt"
-  packages:
-    - cowsay
+  enabled: true
+  settings:
+    manager: "" # Package manager to use (must be installed)
+    packages: [] # Packages to install via the manager
+GitHub:
+  enabled: true
+  settings:
+    token-env-key: "" # The env variable that holds your Github personal access token
+    ssh-key-path: ""  # The path for the ssh key to add/use to/for Github
+    ssh-key-name: ""  # The name to give the ssh key
 ```
 
 ## Contribution
