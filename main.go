@@ -24,7 +24,4 @@ func main() {
 		newApp.ModuleRegistry.Register(module)
 	}
 	_ = cmd.ExecuteApplication(newApp)
-	//if err != nil {
-	//	log.Fatalf("Error: %s", err)
-	//}
 }

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// Config is the configuration for the application.
 type Config struct {
 	Version    string   `yaml:"version"`
 	AllModules []Module `yaml:"modules"`
@@ -13,6 +14,7 @@ type Config struct {
 	// TODO log level/filepath once logging is implemented
 }
 
+// NewConfig returns a pointer to a Config.
 func NewConfig() *Config {
 	return &Config{
 		Version:    "0.1.0",
@@ -59,6 +61,7 @@ func createAndOrGetConfigPath() (string, error) {
 	return confFilePath, nil
 }
 
+// mustGetConfigPath is a wrapper for createAndOrGetConfigPath that panics if there is an error.
 func mustGetConfigPath() string {
 	path, err := createAndOrGetConfigPath()
 	if err != nil {

@@ -1,9 +1,5 @@
 package app
 
-import "errors"
-
-var ModuleNotFoundError = errors.New("no module found")
-
 // Module
 // Any struct that implements these methods can be considered a module.
 type Module interface {

@@ -9,23 +9,6 @@ import (
 	"log"
 )
 
-type config struct {
-	Enabled        bool                   `yaml:"enabled"`
-	ConfigSettings PackageManagerSettings `yaml:"settings"`
-}
-
-type GenericPackageManager struct {
-	Name              string
-	config            config
-	PackageManagerMap map[packageManager][]string
-	Application       *app.App
-}
-
-type PackageManagerSettings struct {
-	Manager  string   `yaml:"manager"`
-	Packages []string `yaml:"packages"`
-}
-
 // init
 // This should really just handle registering the module in the registry.
 func init() {
@@ -39,25 +22,50 @@ func init() {
 	})
 }
 
+// GenericPackageManager implements module, so we can register and execute it.
+type GenericPackageManager struct {
+	Name              string
+	config            config
+	PackageManagerMap map[packageManager][]string
+	Application       *app.App
+}
+
+// config is the YAML configuration for GenericPackageManager.
+type config struct {
+	Enabled        bool                   `yaml:"enabled"`
+	ConfigSettings PackageManagerSettings `yaml:"settings"`
+}
+
+// PackageManagerSettings contains the user chosen package manager and the packages the user wants to install.
+type PackageManagerSettings struct {
+	Manager  string   `yaml:"manager"`
+	Packages []string `yaml:"packages"`
+}
+
+// Setup will run the installation command on the chosen package manager.
 func (gpm *GenericPackageManager) Setup() error {
 	gpm.PackageManagerMap[gpm.Manager()] = gpm.config.ConfigSettings.Packages
 	return gpm.managePackages("install")
 }
 
+// TearDown will run the remove command on the chosen package manager.
 func (gpm *GenericPackageManager) TearDown() error {
 	gpm.PackageManagerMap[gpm.Manager()] = gpm.config.ConfigSettings.Packages
 	return gpm.managePackages("uninstall")
 }
 
+// Update will run the update command on the chosen package manager.
 func (gpm *GenericPackageManager) Update() error {
 	gpm.PackageManagerMap[gpm.Manager()] = gpm.config.ConfigSettings.Packages
 	return gpm.managePackages("update")
 }
 
+// GetName returns the name field of the GenericPackageManager struct.
 func (gpm *GenericPackageManager) GetName() string {
 	return gpm.Name
 }
 
+// Config returns the shallow-copied module config from our module's config.
 func (gpm *GenericPackageManager) Config() app.ModuleConfig {
 	return app.ModuleConfig{
 		Enabled:  gpm.config.Enabled,
@@ -65,10 +73,12 @@ func (gpm *GenericPackageManager) Config() app.ModuleConfig {
 	}
 }
 
+// SetApp sets the application field as the app that is passed in.
 func (gpm *GenericPackageManager) SetApp(app *app.App) {
 	gpm.Application = app
 }
 
+// ParseConfig takes in a map that ideally contains a YAML structure, to be marshalled into the config.
 func (gpm *GenericPackageManager) ParseConfig(rawConfig map[string]interface{}) error {
 	configBytes, err := yaml.Marshal(rawConfig)
 	if err != nil {
@@ -82,18 +92,21 @@ func (gpm *GenericPackageManager) ParseConfig(rawConfig map[string]interface{}) 
 	return nil
 }
 
+// packageManager is an interface that is meant to group the functions that a package manager would need to do.
 type packageManager interface {
 	Install([]string, *SysCall) error
 	Uninstall([]string, *SysCall) error
 	Update([]string, *SysCall) error
 }
 
+// BasePackageManager implements the packageManager interface.
 type BasePackageManager struct {
 	Name string
 	Args packageManagerArgs
 	Opts packageManagerOpts
 }
 
+// packageManagerArgs contains what we need to tell each supported package manager what we intend to do.
 type packageManagerArgs struct {
 	InstallArg   string
 	UninstallArg string
@@ -101,23 +114,28 @@ type packageManagerArgs struct {
 	UpgradeArg   string
 }
 
+// packageManagerOpts contains what we need to skip prompts and quiet the output when there are no errors.
 type packageManagerOpts struct {
 	AutoConfirmOpt string
 	QuietOpt       string
 }
 
+// Install install the packages.
 func (pm *BasePackageManager) Install(packages []string, call *SysCall) error {
 	return pm.execute("install", packages, *call)
 }
 
+// Uninstall uninstall the packages.
 func (pm *BasePackageManager) Uninstall(packages []string, call *SysCall) error {
 	return pm.execute("uninstall", packages, *call)
 }
 
+// Update updates the packages.
 func (pm *BasePackageManager) Update(packages []string, call *SysCall) error {
 	return pm.execute("update", packages, *call)
 }
 
+// execute ensures the package manager is set, checks if we need sudo, formats the command, and manages the packages.
 func (pm *BasePackageManager) execute(operation string, packages []string, syscall SysCall) error {
 	var noPackageManagerFoundErr = errors.New("no package Manager set, set one in the config")
 	if pm == nil {
@@ -137,6 +155,7 @@ func (pm *BasePackageManager) execute(operation string, packages []string, sysca
 	return nil
 }
 
+// formatCommand will set the proper auto-confirm and quiet options on our management command.
 func formatCommand(pm *BasePackageManager, operation string) []string {
 	var args string
 	switch operation {
@@ -157,22 +176,18 @@ func formatCommand(pm *BasePackageManager, operation string) []string {
 	}
 }
 
+// Manager will get the current package manager as long as it is supprorted.
 func (gpm *GenericPackageManager) Manager() *BasePackageManager {
 	return supportedPackageManagers[gpm.config.ConfigSettings.Manager]
 }
 
-func (gpm *GenericPackageManager) addToInstaller(pm packageManager, packages []string) {
-	if _, ok := gpm.PackageManagerMap[pm]; !ok {
-		gpm.PackageManagerMap[pm] = []string{}
-	}
-	gpm.PackageManagerMap[pm] = append(gpm.PackageManagerMap[pm], packages...)
-}
-
+// system returns the SysCall in use by the registry.
 func (gpm *GenericPackageManager) system() *SysCall {
 	sysCallMod := gpm.Application.ModuleRegistry.GetModule("SysCall")
 	return sysCallMod.(*SysCall)
 }
 
+// managePackages will take an operation such as "install" and install all packages in the PackageManagerMap.
 func (gpm *GenericPackageManager) managePackages(operation string) error {
 	for pm, packages := range gpm.PackageManagerMap {
 		switch operation {
@@ -193,7 +208,7 @@ func (gpm *GenericPackageManager) managePackages(operation string) error {
 	return nil
 }
 
-// PackageManagerMap
+// supportedPackageManagers
 // Give it a string, get a BasePackageManager.
 var supportedPackageManagers = map[string]*BasePackageManager{
 	"apt":      &aptitude,
